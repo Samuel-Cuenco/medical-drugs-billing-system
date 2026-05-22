@@ -65,9 +65,9 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     cartControls->addWidget(plusButton);
 
     // Total pane
-    QLabel* totalLabel = new QLabel("Total: P0.00", central);
-    QPushButton* checkoutButton = new QPushButton("Checkout", central);
-    QPushButton* clearCartButton = new QPushButton("Clear Cart", central);
+    totalLabel = new QLabel("Total: P0.00", central);
+    checkoutButton = new QPushButton("Checkout", central);
+    clearCartButton = new QPushButton("Clear Cart", central);
     QHBoxLayout* checkoutLayout = new QHBoxLayout;
     checkoutLayout->addWidget(totalLabel);
     checkoutLayout->addWidget(clearCartButton);
@@ -241,6 +241,7 @@ void MainWindow::addToCart(QListWidgetItem* item) {
         updateCartItemDisplay(cartItem);
         cartList->addItem(cartItem);
     }
+    updateCartTotals();
     // cartList->addItem(item->text());
 }
 
@@ -325,6 +326,7 @@ void MainWindow::increaseQuantity() {
     current->setData(Qt::UserRole + 4, quantity);
     updateCartItemDisplay(current);
     quantityBox->setValue(quantity);
+    updateCartTotals();
 }
 
 void MainWindow::decreaseQuantity() {
@@ -338,6 +340,7 @@ void MainWindow::decreaseQuantity() {
     current->setData(Qt::UserRole + 4, quantity);
     updateCartItemDisplay(current);
     quantityBox->setValue(quantity);
+    updateCartTotals();
 }
 
 void MainWindow::quantityChanged(int value) {
@@ -345,6 +348,7 @@ void MainWindow::quantityChanged(int value) {
     if (!current) return;
     current->setData(Qt::UserRole + 4, value);
     updateCartItemDisplay(current);
+    updateCartTotals();
 }
 
 void MainWindow::updateCartTotals() {
@@ -390,4 +394,3 @@ void MainWindow::checkout() {
     plusButton->setEnabled(false);
     minusButton->setEnabled(false);
 }
-
