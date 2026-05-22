@@ -6,6 +6,7 @@
 #include <QtSql/QSqlDatabase> // sql queries
 #include <QListWidgetItem>
 #include <QSpinBox>
+#include <QLabel>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -21,19 +22,30 @@ private slots:
     void addSelectedSearchItem();
     void cartSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous);
     void searchSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous);
+    void updateCartTotals();
+    void clearCart();
     // item quantity function declarations
     void increaseQuantity();
     void decreaseQuantity();
     void quantityChanged(int value);
+    // checkout
+    void checkout();
 
 private:
+    // search
     QLineEdit* searchBox;
     QListWidget* searchResults;
+    // cart
     QListWidget* cartList;
     QPushButton* addButton;
     QPushButton* plusButton;
     QPushButton* minusButton;
     QSpinBox* quantityBox;
+    // checkout
+    QPushButton* checkoutButton;
+    QPushButton* clearCartButton;
+    QLabel* totalLabel;
+    // db
     QSqlDatabase db;
 
     void openDatabase();

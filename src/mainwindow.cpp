@@ -47,25 +47,37 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     leftLayout->addWidget(searchResults);
     leftLayout->addWidget(addButton);
 
-    // *right pane of main layout: cart
+    // right pane of main layout: cart
+    // header
     QVBoxLayout* rightLayout = new QVBoxLayout;
     QLabel* rightTitle = new QLabel("Customer Cart", central);
+    
+    // cart layout
     cartList = new QListWidget(central);
     plusButton = new QPushButton("+", central);
     minusButton = new QPushButton("-", central);
     quantityBox = new QSpinBox(central);
     quantityBox->setRange(1, 999);
     quantityBox->setValue(1);
-
     QHBoxLayout* cartControls = new QHBoxLayout;
     cartControls->addWidget(minusButton);
     cartControls->addWidget(quantityBox);
     cartControls->addWidget(plusButton);
 
+    // Total pane
+    QLabel* totalLabel = new QLabel("Total: P0.00", central);
+    QPushButton* checkoutButton = new QPushButton("Checkout", central);
+    QPushButton* clearCartButton = new QPushButton("Clear Cart", central);
+    QHBoxLayout* checkoutLayout = new QHBoxLayout;
+    checkoutLayout->addWidget(totalLabel);
+    checkoutLayout->addWidget(clearCartButton);
+    checkoutLayout->addWidget(checkoutButton);
+
     // add to right pane
     rightLayout->addWidget(rightTitle);
     rightLayout->addWidget(cartList);
     rightLayout->addLayout(cartControls);
+    rightLayout->addLayout(checkoutLayout);
     
     // *add panes to mainLayout
     mainLayout->addLayout(leftLayout, 1);
@@ -97,6 +109,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(plusButton, &QPushButton::clicked, this, &MainWindow::increaseQuantity);
     connect(minusButton, &QPushButton::clicked, this, &MainWindow::decreaseQuantity);
     connect(quantityBox, qOverload<int>(&QSpinBox::valueChanged), this, &MainWindow::quantityChanged);
+    connect(clearCartButton, &QPushButton::clicked, this, &MainWindow::clearCart);
+
+    // checkout
+    connect(checkoutButton, &QPushButton::clicked, this, &MainWindow::checkout);
 };
 
 void MainWindow::openDatabase() {
@@ -185,7 +201,7 @@ void MainWindow::importCsvToDatabase(const QString &csvPath) {
     }
 }
 
-// Search Functions
+// search functions definitions
 void MainWindow::searchSelectionChanged(QListWidgetItem* current, QListWidgetItem*) {
     addButton->setEnabled(current != nullptr);
 }
@@ -194,63 +210,6 @@ void MainWindow::addSelectedSearchItem() {
     QListWidgetItem* current = searchResults->currentItem();
     if (current)
         addToCart(current);
-}
-
-// Cart Functions
-void MainWindow::updateCartItemDisplay(QListWidgetItem* item) {
-    QString id = item->data(Qt::UserRole).toString();
-    QString name = item->data(Qt::UserRole + 1).toString();
-    double price = item->data(Qt::UserRole + 2).toDouble();
-    int quantity = item->data(Qt::UserRole + 4).toInt();
-
-    item->setText(QString("%1 x%2 — ₱%3 each — ID:%4")
-        .arg(name)
-        .arg(quantity)
-        .arg(price, 0, 'f', 2)
-        .arg(id));
-}
-
-void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem* ) {
-    if (!current) {
-        quantityBox->setEnabled(false);
-        plusButton->setEnabled(false);
-        minusButton->setEnabled(false);
-        return;
-    }
-
-    quantityBox->setEnabled(true);
-    plusButton->setEnabled(true);
-    minusButton->setEnabled(true);
-    quantityBox->setValue(current->data(Qt::UserRole + 4).toInt());
-}
-
-void MainWindow::increaseQuantity() {
-    QListWidgetItem* current = cartList->currentItem();
-    if (!current) return;
-    int quantity = current->data(Qt::UserRole + 4).toInt() + 1;
-    current->setData(Qt::UserRole + 4, quantity);
-    updateCartItemDisplay(current);
-    quantityBox->setValue(quantity);
-}
-
-void MainWindow::decreaseQuantity() {
-    QListWidgetItem* current = cartList->currentItem();
-    if (!current) return;
-    int quantity = current->data(Qt::UserRole + 4).toInt() - 1;
-    if (quantity <= 0) {
-        delete current;
-        return;
-    }
-    current->setData(Qt::UserRole + 4, quantity);
-    updateCartItemDisplay(current);
-    quantityBox->setValue(quantity);
-}
-
-void MainWindow::quantityChanged(int value) {
-    QListWidgetItem* current = cartList->currentItem();
-    if (!current) return;
-    current->setData(Qt::UserRole + 4, value);
-    updateCartItemDisplay(current);
 }
 
 void MainWindow::addToCart(QListWidgetItem* item) {
@@ -330,3 +289,105 @@ void MainWindow::updateResults(const QString &text) {
         searchResults->addItem(item);
     }
 }
+
+// cart functions definitions
+void MainWindow::updateCartItemDisplay(QListWidgetItem* item) {
+    QString id = item->data(Qt::UserRole).toString();
+    QString name = item->data(Qt::UserRole + 1).toString();
+    double price = item->data(Qt::UserRole + 2).toDouble();
+    int quantity = item->data(Qt::UserRole + 4).toInt();
+
+    item->setText(QString("%1 x%2 — ₱%3 each — ID:%4")
+        .arg(name)
+        .arg(quantity)
+        .arg(price, 0, 'f', 2)
+        .arg(id));
+}
+
+void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem* ) {
+    if (!current) {
+        quantityBox->setEnabled(false);
+        plusButton->setEnabled(false);
+        minusButton->setEnabled(false);
+        return;
+    }
+
+    quantityBox->setEnabled(true);
+    plusButton->setEnabled(true);
+    minusButton->setEnabled(true);
+    quantityBox->setValue(current->data(Qt::UserRole + 4).toInt());
+}
+
+void MainWindow::increaseQuantity() {
+    QListWidgetItem* current = cartList->currentItem();
+    if (!current) return;
+    int quantity = current->data(Qt::UserRole + 4).toInt() + 1;
+    current->setData(Qt::UserRole + 4, quantity);
+    updateCartItemDisplay(current);
+    quantityBox->setValue(quantity);
+}
+
+void MainWindow::decreaseQuantity() {
+    QListWidgetItem* current = cartList->currentItem();
+    if (!current) return;
+    int quantity = current->data(Qt::UserRole + 4).toInt() - 1;
+    if (quantity <= 0) {
+        delete current;
+        return;
+    }
+    current->setData(Qt::UserRole + 4, quantity);
+    updateCartItemDisplay(current);
+    quantityBox->setValue(quantity);
+}
+
+void MainWindow::quantityChanged(int value) {
+    QListWidgetItem* current = cartList->currentItem();
+    if (!current) return;
+    current->setData(Qt::UserRole + 4, value);
+    updateCartItemDisplay(current);
+}
+
+void MainWindow::updateCartTotals() {
+    double total = 0.0;
+    for (int i = 0; i < cartList->count(); ++i) {
+        QListWidgetItem* item = cartList->item(i);
+        double price = item->data(Qt::UserRole + 2).toDouble();
+        int quantity = item->data(Qt::UserRole + 4).toInt();
+        total += price * quantity;
+    }
+    totalLabel->setText(QString("Total: ₱%1").arg(total, 0, 'f', 2));
+}
+
+void MainWindow::clearCart() {
+    cartList->clear();
+    updateCartTotals();
+    quantityBox->setEnabled(false);
+    plusButton->setEnabled(false);
+    minusButton->setEnabled(false);
+}
+
+// checkout function definitions
+void MainWindow::checkout() {
+    if (cartList->count() == 0) {
+        QMessageBox::information(this, "Checkout", "Cart is empty.");
+        return;
+    }
+
+    double total = 0.0;
+    for (int i = 0; i < cartList->count(); ++i) {
+        QListWidgetItem* item = cartList->item(i);
+        total += item->data(Qt::UserRole + 2).toDouble() *
+                 item->data(Qt::UserRole + 4).toInt();
+    }
+
+    QMessageBox::information(this, "Checkout",
+        QString("Total due: ₱%1\nSale complete.")
+            .arg(total, 0, 'f', 2));
+
+    cartList->clear();
+    updateCartTotals();
+    quantityBox->setEnabled(false);
+    plusButton->setEnabled(false);
+    minusButton->setEnabled(false);
+}
+
