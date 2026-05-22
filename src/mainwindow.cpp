@@ -229,6 +229,11 @@ void MainWindow::addToCart(QListWidgetItem* item) {
     }
 
     int stock = item->data(Qt::UserRole + 4).toInt();
+    // prevent adding items that are out of stock
+    if (stock <= 0) {
+        QMessageBox::warning(this, "Out of stock", "This item is out of stock and cannot be added to the cart.");
+        return;
+    }
 
     if (existing) {
         int quantity = existing->data(Qt::UserRole + 5).toInt() + 1;
