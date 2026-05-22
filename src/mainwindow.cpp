@@ -228,16 +228,23 @@ void MainWindow::addToCart(QListWidgetItem* item) {
         }
     }
 
+    int stock = item->data(Qt::UserRole + 4).toInt();
+
     if (existing) {
-        int quantity = existing->data(Qt::UserRole + 4).toInt() + 1;
-        existing->setData(Qt::UserRole + 4, quantity);
+        int quantity = existing->data(Qt::UserRole + 5).toInt() + 1;
+        if (quantity > stock) {
+            QMessageBox::warning(this, "Stock limit", QString("Only %1 unit(s) available.").arg(stock));
+            return;
+        }
+        existing->setData(Qt::UserRole + 5, quantity);
         updateCartItemDisplay(existing);
     } else {
         QListWidgetItem* cartItem = new QListWidgetItem;
         cartItem->setData(Qt::UserRole, id);
         cartItem->setData(Qt::UserRole + 1, name);
         cartItem->setData(Qt::UserRole + 2, price);
-        cartItem->setData(Qt::UserRole + 4, 1);
+        cartItem->setData(Qt::UserRole + 4, stock);
+        cartItem->setData(Qt::UserRole + 5, 1);
         updateCartItemDisplay(cartItem);
         cartList->addItem(cartItem);
     }
@@ -286,6 +293,7 @@ void MainWindow::updateResults(const QString &text) {
         item->setData(Qt::UserRole + 1, name);
         item->setData(Qt::UserRole + 2, price);
         item->setData(Qt::UserRole + 3, desc);
+        item->setData(Qt::UserRole + 4, stock);
 
         searchResults->addItem(item);
     }
@@ -296,12 +304,14 @@ void MainWindow::updateCartItemDisplay(QListWidgetItem* item) {
     QString id = item->data(Qt::UserRole).toString();
     QString name = item->data(Qt::UserRole + 1).toString();
     double price = item->data(Qt::UserRole + 2).toDouble();
-    int quantity = item->data(Qt::UserRole + 4).toInt();
+    int quantity = item->data(Qt::UserRole + 5).toInt();
+    int stock = item->data(Qt::UserRole + 4).toInt();
 
-    item->setText(QString("%1 x%2 — ₱%3 each — ID:%4")
+    item->setText(QString("%1 x%2 — ₱%3 each — stock:%4 — ID:%5")
         .arg(name)
         .arg(quantity)
         .arg(price, 0, 'f', 2)
+        .arg(stock)
         .arg(id));
 }
 
@@ -316,14 +326,19 @@ void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem*
     quantityBox->setEnabled(true);
     plusButton->setEnabled(true);
     minusButton->setEnabled(true);
-    quantityBox->setValue(current->data(Qt::UserRole + 4).toInt());
+    quantityBox->setValue(current->data(Qt::UserRole + 5).toInt());
 }
 
 void MainWindow::increaseQuantity() {
     QListWidgetItem* current = cartList->currentItem();
     if (!current) return;
-    int quantity = current->data(Qt::UserRole + 4).toInt() + 1;
-    current->setData(Qt::UserRole + 4, quantity);
+    int stock = current->data(Qt::UserRole + 4).toInt();
+    int quantity = current->data(Qt::UserRole + 5).toInt() + 1;
+    if (quantity > stock) {
+        QMessageBox::warning(this, "Stock limit", QString("Only %1 unit(s) available.").arg(stock));
+        return;
+    }
+    current->setData(Qt::UserRole + 5, quantity);
     updateCartItemDisplay(current);
     quantityBox->setValue(quantity);
     updateCartTotals();
@@ -332,12 +347,13 @@ void MainWindow::increaseQuantity() {
 void MainWindow::decreaseQuantity() {
     QListWidgetItem* current = cartList->currentItem();
     if (!current) return;
-    int quantity = current->data(Qt::UserRole + 4).toInt() - 1;
+    int quantity = current->data(Qt::UserRole + 5).toInt() - 1;
     if (quantity <= 0) {
         delete current;
+        updateCartTotals();
         return;
     }
-    current->setData(Qt::UserRole + 4, quantity);
+    current->setData(Qt::UserRole + 5, quantity);
     updateCartItemDisplay(current);
     quantityBox->setValue(quantity);
     updateCartTotals();
@@ -346,7 +362,13 @@ void MainWindow::decreaseQuantity() {
 void MainWindow::quantityChanged(int value) {
     QListWidgetItem* current = cartList->currentItem();
     if (!current) return;
-    current->setData(Qt::UserRole + 4, value);
+    int stock = current->data(Qt::UserRole + 4).toInt();
+    if (value > stock) {
+        QMessageBox::warning(this, "Stock limit", QString("Only %1 unit(s) available.").arg(stock));
+        quantityBox->setValue(stock);
+        value = stock;
+    }
+    current->setData(Qt::UserRole + 5, value);
     updateCartItemDisplay(current);
     updateCartTotals();
 }
@@ -356,7 +378,7 @@ void MainWindow::updateCartTotals() {
     for (int i = 0; i < cartList->count(); ++i) {
         QListWidgetItem* item = cartList->item(i);
         double price = item->data(Qt::UserRole + 2).toDouble();
-        int quantity = item->data(Qt::UserRole + 4).toInt();
+        int quantity = item->data(Qt::UserRole + 5).toInt();
         total += price * quantity;
     }
     totalLabel->setText(QString("Total: ₱%1").arg(total, 0, 'f', 2));
@@ -381,16 +403,34 @@ void MainWindow::checkout() {
     for (int i = 0; i < cartList->count(); ++i) {
         QListWidgetItem* item = cartList->item(i);
         total += item->data(Qt::UserRole + 2).toDouble() *
-                 item->data(Qt::UserRole + 4).toInt();
+                 item->data(Qt::UserRole + 5).toInt();
     }
 
     QMessageBox::information(this, "Checkout",
         QString("Total due: ₱%1\nSale complete.")
             .arg(total, 0, 'f', 2));
 
+    updateStock();
     cartList->clear();
     updateCartTotals();
     quantityBox->setEnabled(false);
     plusButton->setEnabled(false);
     minusButton->setEnabled(false);
+    updateResults(searchBox->text());
+}
+
+void MainWindow::updateStock() {
+    QSqlQuery update(db);
+    update.prepare("UPDATE products SET stock = stock - :sold WHERE item_id = :id");
+
+    for (int i = 0; i < cartList->count(); ++i) {
+        QListWidgetItem* item = cartList->item(i);
+        QString id = item->data(Qt::UserRole).toString();
+        int quantity = item->data(Qt::UserRole + 5).toInt();
+        update.bindValue(":sold", quantity);
+        update.bindValue(":id", id);
+        if (!update.exec()) {
+            qWarning() << "Failed to update stock:" << update.lastError().text();
+        }
+    }
 }

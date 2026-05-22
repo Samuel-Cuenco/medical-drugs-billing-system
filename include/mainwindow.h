@@ -30,6 +30,7 @@ private slots:
     void quantityChanged(int value);
     // checkout
     void checkout();
+    void updateStock();
 
 private:
     // search
@@ -47,7 +48,7 @@ private:
     QLabel* totalLabel;
     // db
     QSqlDatabase db;
-
+    
     void openDatabase();
     void importCsvToDatabase(const QString &csvPath);
     void updateCartItemDisplay(QListWidgetItem* item);
