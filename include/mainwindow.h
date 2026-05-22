@@ -61,8 +61,5 @@ private:
     QSqlDatabase db;
     
     QPoint m_dragPosition;
-
-    void openDatabase();
-    void importCsvToDatabase(const QString &csvPath);
     void updateCartItemDisplay(QListWidgetItem* item);
 };
