@@ -1,4 +1,5 @@
 #include "mainwindow.h" // import file mainwindow.h
+#include "helpers.h" // helper functions in here
 #include <QVBoxLayout> // vertical box layout
 #include <QHBoxLayout> // horizontal box layout
 #include <QLabel> // put text
@@ -21,18 +22,59 @@
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("Jupiter Drugstore"); // window title
+    this->setWindowFlags(Qt::FramelessWindowHint); // remove title bar
+
+    // *load ui
+    Helpers::loadUI(this);
 
     // *central widget
     QWidget* central = new QWidget(this);
+    central->setObjectName("central"); // This must match the .central selector in your CSS
+    
+    // *outer vertical layout to hold title bar and content
+    QVBoxLayout* outerLayout = new QVBoxLayout(central);
+    outerLayout->setContentsMargins(0, 0, 0, 0);
+    outerLayout->setSpacing(0);
+
+    // *custom title bar
+    QWidget* titleBar = new QWidget(central);
+    titleBar->setObjectName("titleBar");
+    titleBar->setFixedHeight(40);
+
+    QHBoxLayout* titleLayout = new QHBoxLayout(titleBar);
+    titleLayout->setContentsMargins(15, 0, 10, 0);
+    
+    QLabel* titleLabel = new QLabel("Jupiter Drugstore", titleBar);
+    titleLabel->setObjectName("titleLabel");
+    
+    QPushButton* minBtn = new QPushButton("—", titleBar);
+    minBtn->setObjectName("minBtn");
+    minBtn->setFixedSize(30, 30);
+    
+    maxBtn = new QPushButton("▢", titleBar);
+    maxBtn->setObjectName("maxBtn");
+    maxBtn->setFixedSize(30, 30);
+
+    QPushButton* closeBtn = new QPushButton("✕", titleBar);
+    closeBtn->setObjectName("closeBtn");
+    closeBtn->setFixedSize(30, 30);
+
+    titleLayout->addWidget(titleLabel);
+    titleLayout->addStretch();
+    titleLayout->addWidget(minBtn);
+    titleLayout->addWidget(maxBtn);
+    titleLayout->addWidget(closeBtn);
+    
+    outerLayout->addWidget(titleBar);
+
+    // central widget
     setCentralWidget(central);
 
-    // *main layout
-    QHBoxLayout* mainLayout = new QHBoxLayout(central);
-    central->setLayout(mainLayout); //sf
+    QHBoxLayout* mainLayout = new QHBoxLayout();
     mainLayout->setContentsMargins(12, 12, 12, 12);
     mainLayout->setSpacing(20);
 
-    // *left pane of main layout: search + results
+    // *left pane of main layout containing search and results
     QVBoxLayout* leftLayout = new QVBoxLayout;
     QLabel* leftTitle = new QLabel("Search Medicines", central);
     searchBox = new QLineEdit(central);
@@ -66,11 +108,14 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     // Total pane
     totalLabel = new QLabel("Total: P0.00", central);
+    removeButton = new QPushButton("Remove", central);
+    removeButton->setEnabled(false);
     checkoutButton = new QPushButton("Checkout", central);
     clearCartButton = new QPushButton("Clear Cart", central);
     QHBoxLayout* checkoutLayout = new QHBoxLayout;
     checkoutLayout->addWidget(totalLabel);
     checkoutLayout->addWidget(clearCartButton);
+    checkoutLayout->addWidget(removeButton);
     checkoutLayout->addWidget(checkoutButton);
 
     // add to right pane
@@ -82,6 +127,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     // *add panes to mainLayout
     mainLayout->addLayout(leftLayout, 1);
     mainLayout->addLayout(rightLayout, 1);
+    outerLayout->addLayout(mainLayout);
 
     // * set csv path
     QString csvPath = "hospital_medicines.csv";
@@ -109,11 +155,61 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     connect(plusButton, &QPushButton::clicked, this, &MainWindow::increaseQuantity);
     connect(minusButton, &QPushButton::clicked, this, &MainWindow::decreaseQuantity);
     connect(quantityBox, qOverload<int>(&QSpinBox::valueChanged), this, &MainWindow::quantityChanged);
+    connect(removeButton, &QPushButton::clicked, this, &MainWindow::removeFromCart);
     connect(clearCartButton, &QPushButton::clicked, this, &MainWindow::clearCart);
 
     // checkout
     connect(checkoutButton, &QPushButton::clicked, this, &MainWindow::checkout);
+
+    // title bar connections
+    connect(minBtn, &QPushButton::clicked, this, &MainWindow::showMinimized);
+    connect(maxBtn, &QPushButton::clicked, this, &MainWindow::toggleMaximize);
+    connect(closeBtn, &QPushButton::clicked, this, &MainWindow::close);
+
+    // load initial data immediately
+    updateResults("");
 };
+
+void MainWindow::mousePressEvent(QMouseEvent *event) {
+    // only allow dragging from the title bar area (height 40)
+    if (event->button() == Qt::LeftButton && event->position().y() < 40) {
+        m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
+        event->accept();
+    }
+}
+
+void MainWindow::mouseMoveEvent(QMouseEvent *event) {
+    if (event->buttons() & Qt::LeftButton) {
+        if (isMaximized()) {
+            // if dragging while maximized, restore first
+            toggleMaximize();
+            return;
+        }
+        move(event->globalPosition().toPoint() - m_dragPosition);
+        event->accept();
+    }
+}
+
+void MainWindow::mouseDoubleClickEvent(QMouseEvent *event) {
+    // maximize/Restore when double clicking the title bar
+    if (event->button() == Qt::LeftButton && event->position().y() < 40) {
+        toggleMaximize();
+    }
+}
+
+void MainWindow::toggleMaximize() {
+    if (isMaximized()) {
+        showNormal();
+        maxBtn->setText("▢");
+        // Add border back when not maximized
+        centralWidget()->setStyleSheet("#central { border: 1px solid #dcdcdc; }");
+    } else {
+        showMaximized();
+        maxBtn->setText("❐");
+        // Remove border when maximized for a "fit to window" look
+        centralWidget()->setStyleSheet("#central { border: none; }");
+    }
+}
 
 void MainWindow::openDatabase() {
     db = QSqlDatabase::addDatabase("QSQLITE");
@@ -260,21 +356,30 @@ void MainWindow::addToCart(QListWidgetItem* item) {
 void MainWindow::updateResults(const QString &text) {
     searchResults->clear();
     QString trimmed = text.trimmed();
-    if (trimmed.isEmpty()) return;
 
     QSqlQuery query(db);
-    query.prepare(R"(
-        SELECT item_id, item_name, description, retail_price, stock
-        FROM products
-        WHERE item_name LIKE :term1 
-        OR description LIKE :term2 
-        OR item_id LIKE :term3
-        LIMIT 200
-    )");
-    QString match = "%" + trimmed + "%";
-    query.bindValue(":term1", match);
-    query.bindValue(":term2", match);
-    query.bindValue(":term3", match);
+    if (trimmed.isEmpty()) {
+        // if search is empty, show all items (limited to 200)
+        query.prepare(R"(
+            SELECT item_id, item_name, description, retail_price, stock
+            FROM products
+            LIMIT 200
+        )");
+    } else {
+        // if user typed something, filter the results
+        query.prepare(R"(
+            SELECT item_id, item_name, description, retail_price, stock
+            FROM products
+            WHERE item_name LIKE :term1 
+            OR description LIKE :term2 
+            OR item_id LIKE :term3
+            LIMIT 200
+        )");
+        QString match = "%" + trimmed + "%";
+        query.bindValue(":term1", match);
+        query.bindValue(":term2", match);
+        query.bindValue(":term3", match);
+    }
 
     if (!query.exec()) {
         qWarning() << "Search query failed:" << query.lastError().text();
@@ -325,12 +430,14 @@ void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem*
         quantityBox->setEnabled(false);
         plusButton->setEnabled(false);
         minusButton->setEnabled(false);
+        removeButton->setEnabled(false);
         return;
     }
 
     quantityBox->setEnabled(true);
     plusButton->setEnabled(true);
     minusButton->setEnabled(true);
+    removeButton->setEnabled(true);
     quantityBox->setValue(current->data(Qt::UserRole + 5).toInt());
 }
 
@@ -389,12 +496,21 @@ void MainWindow::updateCartTotals() {
     totalLabel->setText(QString("Total: ₱%1").arg(total, 0, 'f', 2));
 }
 
+void MainWindow::removeFromCart() {
+    QListWidgetItem* current = cartList->currentItem();
+    if (current) {
+        delete current;
+        updateCartTotals();
+    }
+}
+
 void MainWindow::clearCart() {
     cartList->clear();
     updateCartTotals();
     quantityBox->setEnabled(false);
     plusButton->setEnabled(false);
     minusButton->setEnabled(false);
+    removeButton->setEnabled(false);
 }
 
 // checkout function definitions
@@ -421,6 +537,7 @@ void MainWindow::checkout() {
     quantityBox->setEnabled(false);
     plusButton->setEnabled(false);
     minusButton->setEnabled(false);
+    removeButton->setEnabled(false);
     updateResults(searchBox->text());
 }
 

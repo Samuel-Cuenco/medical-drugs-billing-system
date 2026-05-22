@@ -7,6 +7,8 @@
 #include <QListWidgetItem>
 #include <QSpinBox>
 #include <QLabel>
+#include <QMouseEvent>
+#include <QPoint>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -23,6 +25,7 @@ private slots:
     void cartSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous);
     void searchSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous);
     void updateCartTotals();
+    void removeFromCart();
     void clearCart();
     // item quantity function declarations
     void increaseQuantity();
@@ -31,6 +34,12 @@ private slots:
     // checkout
     void checkout();
     void updateStock();
+    void toggleMaximize();
+
+protected:
+    void mousePressEvent(QMouseEvent *event) override;
+    void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 private:
     // search
@@ -42,6 +51,8 @@ private:
     QPushButton* plusButton;
     QPushButton* minusButton;
     QSpinBox* quantityBox;
+    QPushButton* removeButton;
+    QPushButton* maxBtn;
     // checkout
     QPushButton* checkoutButton;
     QPushButton* clearCartButton;
@@ -49,6 +60,8 @@ private:
     // db
     QSqlDatabase db;
     
+    QPoint m_dragPosition;
+
     void openDatabase();
     void importCsvToDatabase(const QString &csvPath);
     void updateCartItemDisplay(QListWidgetItem* item);
