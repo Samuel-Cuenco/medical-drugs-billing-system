@@ -2,23 +2,21 @@
 #include "helpers.h" // helper functions in here
 #include <QVBoxLayout> // vertical box layout
 #include <QHBoxLayout> // horizontal box layout
+#include <QCoreApplication>
+#include <QWidget> // can hold other widgets
 #include <QLabel> // put text
 #include <QPushButton> // create buttons
 #include <QSqlDatabase> // handle sql connections
-#include <QSqlQuery>
-#include <QSqlError>
-#include <QFile>
-#include <QTextStream>
-#include <QListWidgetItem>
-#include <QLineEdit> // single line
-#include <QMessageBox>
-#include <QWidget>
-#include <QListWidget>
-#include <QTextStream>
-#include <QListWidgetItem>
-#include <QDir>
-#include <QCoreApplication>
-#include <QSpinBox>
+#include <QSqlQuery> // use sql commands
+#include <QSqlError> // catches sql errors
+#include <QFile> // reading and writing files - better compatibility for qt afaik compared to cpp file stream
+#include <QTextStream> // format and read human text
+#include <QListWidget> // create container for items
+#include <QListWidgetItem> // put items into listwidget
+#include <QLineEdit> // single line entry, easier to understand that it takes single line of text
+#include <QMessageBox> // send a pop up dialog box
+#include <QDir> // navigate file system
+#include <QSpinBox> // an input box for numbers specifically
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("Jupiter Drugstore"); // window title
@@ -29,7 +27,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     // *central widget
     QWidget* central = new QWidget(this);
-    central->setObjectName("central"); // This must match the .central selector in your CSS
+    central->setObjectName("central"); // this must match the .central selector in your css file
     
     // *outer vertical layout to hold title bar and content
     QVBoxLayout* outerLayout = new QVBoxLayout(central);
@@ -106,7 +104,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     cartControls->addWidget(quantityBox);
     cartControls->addWidget(plusButton);
 
-    // Total pane
+    // total pane
     totalLabel = new QLabel("Total: P0.00", central);
     removeButton = new QPushButton("Remove", central);
     removeButton->setEnabled(false);
@@ -201,12 +199,12 @@ void MainWindow::toggleMaximize() {
     if (isMaximized()) {
         showNormal();
         maxBtn->setText("▢");
-        // Add border back when not maximized
+        // add border back when not maximized
         centralWidget()->setStyleSheet("#central { border: 1px solid #dcdcdc; }");
     } else {
         showMaximized();
         maxBtn->setText("❐");
-        // Remove border when maximized for a "fit to window" look
+        // remove border when maximized for a "fit to window" look
         centralWidget()->setStyleSheet("#central { border: none; }");
     }
 }

@@ -4,7 +4,7 @@
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
-    app.setWindowIcon(QIcon(":/images/app_icon.png")); // 
+    app.setWindowIcon(QIcon(":/images/app_icon.png")); // set the app icon
 
     MainWindow window; // create a window object
     window.showMaximized(); // scale to monitor size

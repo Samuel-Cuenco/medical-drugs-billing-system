@@ -16,7 +16,7 @@ void Helpers::loadUI(QWidget* widget) {
         
         file.close();
     } else {
-        // If the path is wrong or the file is missing, this prints to your console
+        // send error if not found
         qDebug() << "Error: Could not find the CSS file in resources (:/mainwindow.css)";
     }
 }
