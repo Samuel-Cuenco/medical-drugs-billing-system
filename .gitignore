@@ -1,32 +1,46 @@
-# Prerequisites
-*.d
+# Build output
+/build/
 
-# Compiled Object files
-*.slo
-*.lo
+# CMake files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+build.ninja
+compile_commands.json
+
+# Qt Creator / IDE files
+*.user
+*.user.*
+*.pro.user
+*.pro.user.*
+
+# Generated sources
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+
+# Compiled object files
 *.o
 *.obj
+*.lo
+*.slo
 
-# Precompiled Headers
-*.gch
-*.pch
-
-# Compiled Dynamic libraries
+# Libraries / binaries
 *.so
 *.dylib
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
 *.lib
-
-# Executables
+*.a
 *.exe
 *.out
 *.app
+
+# Temp / backup files
+*~
+*.swp
+*.tmp
+*.log
+
+# Additional Ignore List
+notes.txt
