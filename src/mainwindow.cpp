@@ -17,6 +17,7 @@
 #include <QListWidgetItem>
 #include <QDir>
 #include <QCoreApplication>
+#include <QSpinBox>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("Jupiter Drugstore"); // window title
@@ -37,27 +38,40 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     searchBox = new QLineEdit(central);
     searchBox->setPlaceholderText("Search Medicines...");
     searchResults = new QListWidget(central);
+    addButton = new QPushButton("Add to Cart", central);
+    addButton->setEnabled(false);
     
     // add to left pane
     leftLayout->addWidget(leftTitle);
     leftLayout->addWidget(searchBox);
     leftLayout->addWidget(searchResults);
+    leftLayout->addWidget(addButton);
 
     // *right pane of main layout: cart
     QVBoxLayout* rightLayout = new QVBoxLayout;
     QLabel* rightTitle = new QLabel("Customer Cart", central);
     cartList = new QListWidget(central);
+    plusButton = new QPushButton("+", central);
+    minusButton = new QPushButton("-", central);
+    quantityBox = new QSpinBox(central);
+    quantityBox->setRange(1, 999);
+    quantityBox->setValue(1);
+
+    QHBoxLayout* cartControls = new QHBoxLayout;
+    cartControls->addWidget(minusButton);
+    cartControls->addWidget(quantityBox);
+    cartControls->addWidget(plusButton);
 
     // add to right pane
     rightLayout->addWidget(rightTitle);
     rightLayout->addWidget(cartList);
-
+    rightLayout->addLayout(cartControls);
     
     // *add panes to mainLayout
     mainLayout->addLayout(leftLayout, 1);
     mainLayout->addLayout(rightLayout, 1);
 
-    // csv path
+    // * set csv path
     QString csvPath = "hospital_medicines.csv";
     if (!QFile::exists(csvPath)) {
         QString exeDir = QCoreApplication::applicationDirPath();
@@ -67,12 +81,22 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
         else if (QFile::exists(p2)) csvPath = p2;
     }
 
+    // * prepare database
     openDatabase(); // open sqlite
     importCsvToDatabase(csvPath); // import data from csv to sqlite
 
+    // *connections
     // connect search functions
     connect(searchBox, &QLineEdit::textChanged, this, &MainWindow::updateResults);
     connect(searchResults, &QListWidget::itemDoubleClicked, this, &MainWindow::addToCart);
+    connect(searchResults, &QListWidget::currentItemChanged, this, &MainWindow::searchSelectionChanged);
+    connect(addButton, &QPushButton::clicked, this, &MainWindow::addSelectedSearchItem);
+
+    // connect cart functions
+    connect(cartList, &QListWidget::currentItemChanged, this, &MainWindow::cartSelectionChanged);
+    connect(plusButton, &QPushButton::clicked, this, &MainWindow::increaseQuantity);
+    connect(minusButton, &QPushButton::clicked, this, &MainWindow::decreaseQuantity);
+    connect(quantityBox, qOverload<int>(&QSpinBox::valueChanged), this, &MainWindow::quantityChanged);
 };
 
 void MainWindow::openDatabase() {
@@ -161,9 +185,104 @@ void MainWindow::importCsvToDatabase(const QString &csvPath) {
     }
 }
 
+// Search Functions
+void MainWindow::searchSelectionChanged(QListWidgetItem* current, QListWidgetItem*) {
+    addButton->setEnabled(current != nullptr);
+}
+
+void MainWindow::addSelectedSearchItem() {
+    QListWidgetItem* current = searchResults->currentItem();
+    if (current)
+        addToCart(current);
+}
+
+// Cart Functions
+void MainWindow::updateCartItemDisplay(QListWidgetItem* item) {
+    QString id = item->data(Qt::UserRole).toString();
+    QString name = item->data(Qt::UserRole + 1).toString();
+    double price = item->data(Qt::UserRole + 2).toDouble();
+    int quantity = item->data(Qt::UserRole + 4).toInt();
+
+    item->setText(QString("%1 x%2 — ₱%3 each — ID:%4")
+        .arg(name)
+        .arg(quantity)
+        .arg(price, 0, 'f', 2)
+        .arg(id));
+}
+
+void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem* ) {
+    if (!current) {
+        quantityBox->setEnabled(false);
+        plusButton->setEnabled(false);
+        minusButton->setEnabled(false);
+        return;
+    }
+
+    quantityBox->setEnabled(true);
+    plusButton->setEnabled(true);
+    minusButton->setEnabled(true);
+    quantityBox->setValue(current->data(Qt::UserRole + 4).toInt());
+}
+
+void MainWindow::increaseQuantity() {
+    QListWidgetItem* current = cartList->currentItem();
+    if (!current) return;
+    int quantity = current->data(Qt::UserRole + 4).toInt() + 1;
+    current->setData(Qt::UserRole + 4, quantity);
+    updateCartItemDisplay(current);
+    quantityBox->setValue(quantity);
+}
+
+void MainWindow::decreaseQuantity() {
+    QListWidgetItem* current = cartList->currentItem();
+    if (!current) return;
+    int quantity = current->data(Qt::UserRole + 4).toInt() - 1;
+    if (quantity <= 0) {
+        delete current;
+        return;
+    }
+    current->setData(Qt::UserRole + 4, quantity);
+    updateCartItemDisplay(current);
+    quantityBox->setValue(quantity);
+}
+
+void MainWindow::quantityChanged(int value) {
+    QListWidgetItem* current = cartList->currentItem();
+    if (!current) return;
+    current->setData(Qt::UserRole + 4, value);
+    updateCartItemDisplay(current);
+}
+
 void MainWindow::addToCart(QListWidgetItem* item) {
     if (!item) return;
-    cartList->addItem(item->text());
+
+    QString id = item->data(Qt::UserRole).toString();
+    QString name = item->data(Qt::UserRole + 1).toString();
+    double price = item->data(Qt::UserRole + 2).toDouble();
+
+    QListWidgetItem* existing = nullptr;
+    for (int i=0; i < cartList->count(); ++i) {
+        QListWidgetItem* it = cartList->item(i);
+        if (it->data(Qt::UserRole).toString() == id) {
+            existing = it;
+            break;
+        }
+    }
+
+    if (existing) {
+        int quantity = existing->data(Qt::UserRole + 4).toInt() + 1;
+        existing->setData(Qt::UserRole + 4, quantity);
+        updateCartItemDisplay(existing);
+    } else {
+        QListWidgetItem* cartItem = new QListWidgetItem;
+        cartItem->setData(Qt::UserRole, id);
+        cartItem->setData(Qt::UserRole + 1, name);
+        cartItem->setData(Qt::UserRole + 2, price);
+        cartItem->setData(Qt::UserRole + 4, 1);
+        updateCartItemDisplay(cartItem);
+        cartList->addItem(cartItem);
+    }
+    // cartList->addItem(item->text());
 }
 
 void MainWindow::updateResults(const QString &text) {
@@ -204,6 +323,10 @@ void MainWindow::updateResults(const QString &text) {
         
         QListWidgetItem* item = new QListWidgetItem(itemText);
         item->setData(Qt::UserRole, id);
+        item->setData(Qt::UserRole + 1, name);
+        item->setData(Qt::UserRole + 2, price);
+        item->setData(Qt::UserRole + 3, desc);
+
         searchResults->addItem(item);
     }
 }
