@@ -40,3 +40,34 @@ QLabel {
 QPushButton {
     padding: 5px;
 }
+
+/* Menu */
+#navBar {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+#navBtn {
+    background: transparent;
+    border: none;
+    padding: 10px 20px;
+    font-size: 14px;
+    color: #495057;
+}
+
+#navBtn:hover {
+    background-color: #e9ecef;
+    border-radius: 4px;
+}
+
+/* left pane */
+#leftTitle {
+    font-weight: bold;
+    font-size: 15px;
+}
+
+/* right pane */
+#rightTitle {
+    font-weight: bold;
+    font-size: 15px;
+}

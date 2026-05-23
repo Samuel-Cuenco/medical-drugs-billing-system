@@ -9,6 +9,7 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPoint>
+#include <QStackedWidget>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -35,6 +36,10 @@ private slots:
     void checkout();
     void updateStock();
     void toggleMaximize();
+    // navigation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+    void showBillingPage();
+    void showStatsPage();
+    void importNewCsv();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;
@@ -42,6 +47,10 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 private:
+    QStackedWidget* stackedWidget;
+    QWidget* billingPage;
+    QWidget* statsPage;
+
     // search
     QLineEdit* searchBox;
     QListWidget* searchResults;
@@ -57,9 +66,17 @@ private:
     QPushButton* checkoutButton;
     QPushButton* clearCartButton;
     QLabel* totalLabel;
+    
+    // stats page widgets
+    QLabel* totalProductsLabel;
+    QLabel* totalValueLabel;
+    QListWidget* lowStockList;
+
+    QPushButton* importBtn;
     // db
     QSqlDatabase db;
     
     QPoint m_dragPosition;
     void updateCartItemDisplay(QListWidgetItem* item);
+    void refreshStats();
 };

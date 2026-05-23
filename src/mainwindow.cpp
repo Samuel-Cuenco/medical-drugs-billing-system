@@ -17,6 +17,7 @@
 #include <QMessageBox> // send a pop up dialog box
 #include <QDir> // navigate file system
 #include <QSpinBox> // an input box for numbers specifically
+#include <QFileDialog>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowTitle("Jupiter Drugstore"); // window title
@@ -65,6 +66,73 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     
     outerLayout->addWidget(titleBar);
 
+    // * navigation menu
+    QWidget* navBar = new QWidget(central);
+    navBar->setObjectName("navBar");
+    navBar->setFixedHeight(50);
+    QHBoxLayout* navLayout = new QHBoxLayout(navBar);
+    navLayout->setContentsMargins(10, 0, 10, 0);
+    navLayout->setSpacing(5);
+
+    QPushButton* billingNavBtn = new QPushButton("Billing", navBar);
+    billingNavBtn->setObjectName("navBtn");
+    QPushButton* statsNavBtn = new QPushButton("Statistics", navBar);
+    statsNavBtn->setObjectName("navBtn");
+    importBtn = new QPushButton("Import Stock", navBar);
+    importBtn->setObjectName("navBtn");
+
+    navLayout->addWidget(billingNavBtn);
+    navLayout->addWidget(statsNavBtn);
+    navLayout->addStretch();
+    navLayout->addWidget(importBtn);
+    outerLayout->addWidget(navBar);
+
+    // * Stacked Widget for Pages
+    stackedWidget = new QStackedWidget(central);
+    billingPage = new QWidget(stackedWidget);
+    statsPage = new QWidget(stackedWidget);
+    stackedWidget->addWidget(billingPage);
+    stackedWidget->addWidget(statsPage);
+    outerLayout->addWidget(stackedWidget);
+
+    // * Setup Stats Page UI
+    QVBoxLayout* statsLayout = new QVBoxLayout(statsPage);
+    statsLayout->setContentsMargins(30, 30, 30, 30);
+    statsLayout->setSpacing(20);
+
+    QLabel* statsHeader = new QLabel("Inventory Dashboard", statsPage);
+    statsHeader->setStyleSheet("font-size: 22px; font-weight: bold; color: #2c3e50;");
+    
+    // Summary Cards (Horizontal)
+    QHBoxLayout* summaryCards = new QHBoxLayout();
+    auto createCard = [&](const QString& title, QLabel*& valueLabel) {
+        QFrame* card = new QFrame(statsPage);
+        card->setFrameStyle(QFrame::StyledPanel | QFrame::Raised);
+        card->setStyleSheet("QFrame { background: white; border-radius: 10px; border: 1px solid #ddd; padding: 15px; }");
+        QVBoxLayout* l = new QVBoxLayout(card);
+        QLabel* t = new QLabel(title, card);
+        t->setStyleSheet("font-size: 14px; color: #7f8c8d; border: none;");
+        valueLabel = new QLabel("0", card);
+        valueLabel->setStyleSheet("font-size: 24px; font-weight: bold; color: #2e7d32; border: none;");
+        l->addWidget(t);
+        l->addWidget(valueLabel);
+        return card;
+    };
+
+    summaryCards->addWidget(createCard("Unique Products", totalProductsLabel));
+    summaryCards->addWidget(createCard("Total Inventory Value", totalValueLabel));
+
+    QLabel* lowStockTitle = new QLabel("Low Stock Alerts (Items < 10)", statsPage);
+    lowStockTitle->setStyleSheet("font-size: 16px; font-weight: bold; color: #c0392b; margin-top: 20px;");
+
+    lowStockList = new QListWidget(statsPage);
+    lowStockList->setObjectName("lowStockList");
+
+    statsLayout->addWidget(statsHeader);
+    statsLayout->addLayout(summaryCards);
+    statsLayout->addWidget(lowStockTitle);
+    statsLayout->addWidget(lowStockList);
+
     // central widget
     setCentralWidget(central);
 
@@ -75,6 +143,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     // *left pane of main layout containing search and results
     QVBoxLayout* leftLayout = new QVBoxLayout;
     QLabel* leftTitle = new QLabel("Search Medicines", central);
+    leftTitle->setObjectName("leftTitle");
     searchBox = new QLineEdit(central);
     searchBox->setPlaceholderText("Search Medicines...");
     searchResults = new QListWidget(central);
@@ -91,6 +160,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     // header
     QVBoxLayout* rightLayout = new QVBoxLayout;
     QLabel* rightTitle = new QLabel("Customer Cart", central);
+    rightTitle->setObjectName("rightTitle");
     
     // cart layout
     cartList = new QListWidget(central);
@@ -125,7 +195,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
     // *add panes to mainLayout
     mainLayout->addLayout(leftLayout, 1);
     mainLayout->addLayout(rightLayout, 1);
-    outerLayout->addLayout(mainLayout);
+    billingPage->setLayout(mainLayout);
 
     // * set csv path
     QString csvPath = "hospital_medicines.csv";
@@ -158,6 +228,11 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
     // checkout
     connect(checkoutButton, &QPushButton::clicked, this, &MainWindow::checkout);
+
+    // nav connections
+    connect(billingNavBtn, &QPushButton::clicked, this, &MainWindow::showBillingPage);
+    connect(statsNavBtn, &QPushButton::clicked, this, &MainWindow::showStatsPage);
+    connect(importBtn, &QPushButton::clicked, this, &MainWindow::importNewCsv);
 
     // title bar connections
     connect(minBtn, &QPushButton::clicked, this, &MainWindow::showMinimized);
@@ -275,7 +350,7 @@ void MainWindow::updateResults(const QString &text) {
         query.prepare(R"(
             SELECT item_id, item_name, description, retail_price, stock
             FROM products
-            LIMIT 200
+            LIMIT 999
         )");
     } else {
         // if user typed something, filter the results
@@ -285,7 +360,7 @@ void MainWindow::updateResults(const QString &text) {
             WHERE item_name LIKE :term1 
             OR description LIKE :term2 
             OR item_id LIKE :term3
-            LIMIT 200
+            LIMIT 999
         )");
         QString match = "%" + trimmed + "%";
         query.bindValue(":term1", match);
@@ -466,5 +541,53 @@ void MainWindow::updateStock() {
         if (!update.exec()) {
             qWarning() << "Failed to update stock:" << update.lastError().text();
         }
+    }
+}
+
+void MainWindow::showBillingPage() {
+    stackedWidget->setCurrentWidget(billingPage);
+}
+
+void MainWindow::showStatsPage() {
+    refreshStats();
+    stackedWidget->setCurrentWidget(statsPage);
+}
+
+void MainWindow::refreshStats() {
+    QSqlQuery query(db);
+    
+    // 1. Get totals
+    if (query.exec("SELECT COUNT(*), SUM(retail_price * stock) FROM products")) {
+        if (query.next()) {
+            totalProductsLabel->setText(query.value(0).toString());
+            double totalVal = query.value(1).toDouble();
+            totalValueLabel->setText(QString("₱%1").arg(totalVal, 0, 'f', 2));
+        }
+    }
+
+    // 2. Get low stock items
+    lowStockList->clear();
+    query.prepare("SELECT item_name, stock, item_id FROM products WHERE stock < 10 ORDER BY stock ASC");
+    if (query.exec()) {
+        while (query.next()) {
+            QString name = query.value(0).toString();
+            int stock = query.value(1).toInt();
+            QString id = query.value(2).toString();
+            
+            QListWidgetItem* item = new QListWidgetItem(
+                QString("⚠️ %1 (ID: %2) - Only %3 left").arg(name, id).arg(stock)
+            );
+            if (stock == 0) item->setForeground(Qt::red);
+            lowStockList->addItem(item);
+        }
+    }
+}
+
+void MainWindow::importNewCsv() {
+    QString fileName = QFileDialog::getOpenFileName(this, "Import Medicines", "", "CSV Files (*.csv)");
+    if (!fileName.isEmpty()) {
+        Helpers::importCsvToDatabase(fileName, db);
+        updateResults(searchBox->text());
+        QMessageBox::information(this, "Success", "Database updated successfully.");
     }
 }
