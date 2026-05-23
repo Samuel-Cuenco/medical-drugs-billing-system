@@ -1,26 +1,24 @@
 #pragma once
 #include <QMainWindow>
-#include <QPushButton> // for creating buttons
-#include <QLineEdit> // single line
-#include <QListWidget> 
-#include <QtSql/QSqlDatabase> // sql queries
+#include <QtSql/QSqlDatabase>
 #include <QListWidgetItem>
-#include <QSpinBox>
-#include <QLabel>
-#include <QMouseEvent>
 #include <QPoint>
-#include <QStackedWidget>
+
+// *forward-declare the uic-generated class
+QT_BEGIN_NAMESPACE
+namespace Ui { class MainWindow; }
+QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    MainWindow(QWidget *parent = nullptr);
-    //~MainWindow();
+    explicit MainWindow(QWidget *parent = nullptr);
+    ~MainWindow();
 
 private slots:
-    // search box function declarations
-    void updateResults(const QString &text); // auto update list
-    // cart function declarations
+    // *search box function declarations
+    void updateResults(const QString &text);
+    // *cart function declarations
     void addToCart(QListWidgetItem* item);
     void addSelectedSearchItem();
     void cartSelectionChanged(QListWidgetItem* current, QListWidgetItem* previous);
@@ -28,15 +26,15 @@ private slots:
     void updateCartTotals();
     void removeFromCart();
     void clearCart();
-    // item quantity function declarations
+    // *item quantity function declarations
     void increaseQuantity();
     void decreaseQuantity();
     void quantityChanged(int value);
-    // checkout
+    // *checkout
     void checkout();
     void updateStock();
     void toggleMaximize();
-    // navigation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+    // *navigation
     void showBillingPage();
     void showStatsPage();
     void importNewCsv();
@@ -47,36 +45,10 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent *event) override;
 
 private:
-    QStackedWidget* stackedWidget;
-    QWidget* billingPage;
-    QWidget* statsPage;
-
-    // search
-    QLineEdit* searchBox;
-    QListWidget* searchResults;
-    // cart
-    QListWidget* cartList;
-    QPushButton* addButton;
-    QPushButton* plusButton;
-    QPushButton* minusButton;
-    QSpinBox* quantityBox;
-    QPushButton* removeButton;
-    QPushButton* maxBtn;
-    // checkout
-    QPushButton* checkoutButton;
-    QPushButton* clearCartButton;
-    QLabel* totalLabel;
-    
-    // stats page widgets
-    QLabel* totalProductsLabel;
-    QLabel* totalValueLabel;
-    QListWidget* lowStockList;
-
-    QPushButton* importBtn;
-    // db
+    Ui::MainWindow *ui;   // *replaces every individual widget pointer
     QSqlDatabase db;
-    
     QPoint m_dragPosition;
+
     void updateCartItemDisplay(QListWidgetItem* item);
     void refreshStats();
 };

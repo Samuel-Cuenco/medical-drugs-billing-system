@@ -18,7 +18,7 @@ include_directories(include)
 
 set(SOURCES #source files
     src/main.cpp
-    src/mainwindow.cpp
+
     src/helpers.cpp
 )
 
@@ -40,6 +40,9 @@ add_executable(${PROJECT_NAME}
     ${HEADERS}
     #${UIS}
     ${RESOURCES}
+
+    "src/mainwindow.cpp"
+    src/mainwindow.ui
 )
 
 # Link Qt libraries to your executable
