@@ -10,14 +10,14 @@
 void Helpers::loadUI(QWidget* widget) {
     if (!widget) return;
 
-    QFile file(":/mainwindow.css"); 
-    
+    QFile file(":/mainwindow.css");
+
     if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         QTextStream stream(&file);
         QString loadedStyleSheet = stream.readAll();
-        
+
         widget->setStyleSheet(loadedStyleSheet);
-        
+
         file.close();
     } else {
         // send error if not found
@@ -71,17 +71,23 @@ QStringList Helpers::parseCsvLine(const QString &line) {
 void Helpers::importCsvToDatabase(const QString &csvPath, QSqlDatabase db) {
     QFile file(csvPath);
     if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        qWarning() << "CSV not found or cannot open:" << csvPath << " (cwd:)" << QDir::currentPath();
-        return;
+    qWarning() << "CSV not found or cannot open:" << csvPath << " (cwd:)" << QDir::currentPath();
+    return;
+}
+    QSqlQuery countQuery(db);
+    if (countQuery.exec("SELECT COUNT(*) FROM products") && countQuery.next()) {
+        if (countQuery.value(0).toInt() > 0) {
+            qWarning() << "Products in DB after import:" << countQuery.value(0).toInt();
+            return;
+        }
     }
-    
+
+
     QTextStream in(&file);
     bool firstLine = true;
-    
-    db.transaction(); // Use a transaction for much faster bulk insertion
     QSqlQuery insert(db);
     insert.prepare(R"(
-        INSERT OR REPLACE INTO products
+        INSERT OR IGNORE INTO products
             (item_id, item_name, description, retail_price, stock)
         VALUES
             (:id, :name, :description, :price, :stock)
@@ -105,6 +111,4 @@ void Helpers::importCsvToDatabase(const QString &csvPath, QSqlDatabase db) {
         insert.bindValue(":stock", fields[4].toInt());
         if (!insert.exec()) qWarning() << "Insert failed;" << insert.lastError().text();
     }
-
-    db.commit(); // Finalize the transaction
 }
