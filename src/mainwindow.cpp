@@ -588,6 +588,12 @@ void MainWindow::importNewCsv() {
     if (!fileName.isEmpty()) {
         Helpers::importCsvToDatabase(fileName, db);
         updateResults(searchBox->text());
+        
+        // Refresh stats if we are currently viewing the statistics page
+        if (stackedWidget->currentWidget() == statsPage) {
+            refreshStats();
+        }
+
         QMessageBox::information(this, "Success", "Database updated successfully.");
     }
 }
