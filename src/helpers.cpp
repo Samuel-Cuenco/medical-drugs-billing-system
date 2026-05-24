@@ -77,8 +77,11 @@ void Helpers::importCsvToDatabase(const QString &csvPath, QSqlDatabase db) {
     QSqlQuery countQuery(db);
     if (countQuery.exec("SELECT COUNT(*) FROM products") && countQuery.next()) {
         if (countQuery.value(0).toInt() > 0) {
-            qWarning() << "Products in DB after import:" << countQuery.value(0).toInt();
-            return;
+            QSqlQuery clearQuery(db);
+            if (!clearQuery.exec("DELETE FROM products")) {
+                qWarning() << "Failed to clear table:" << clearQuery.lastError().text();
+                return;
+            }
         }
     }
 
