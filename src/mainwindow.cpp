@@ -4,6 +4,7 @@
 #include "models.h" // Product struct definition
 
 #include <QVBoxLayout> // vertical box layout
+#include <QKeyEvent> // for handling keyboard events
 #include <QHBoxLayout> // horizontal box layout
 #include <QCoreApplication>
 #include <QWidget> // can hold other widgets
@@ -130,6 +131,9 @@ void MainWindow::connectSignalsAndSlots()
             this,              &MainWindow::addToCart);
     connect(ui->searchResults, &QListWidget::currentItemChanged,
             this,              &MainWindow::searchSelectionChanged);
+    // Allow adding the selected item to cart by pressing Enter on search results
+    connect(ui->searchResults, &QListWidget::itemActivated,
+            this,              &MainWindow::addToCart);
     connect(ui->addButton,     &QPushButton::clicked,
             this,              &MainWindow::addSelectedSearchItem);
 
@@ -150,6 +154,12 @@ void MainWindow::connectSignalsAndSlots()
     // Checkout
     connect(ui->checkoutButton, &QPushButton::clicked,
             this,               &MainWindow::checkout);
+    // Allow adding the first selected item to cart by pressing Enter in the search box
+    connect(ui->searchBox,      &QLineEdit::returnPressed,
+            this,               &MainWindow::addSelectedSearchItem);
+
+    // Install event filter for searchBox to handle arrow keys
+    ui->searchBox->installEventFilter(this);
 
     // Navigation
     connect(ui->billingNavBtn, &QPushButton::clicked,
@@ -220,6 +230,11 @@ void MainWindow::updateResults(const QString &text)
         item->setData(ProductObjectRole, QVariant::fromValue(product));
         ui->searchResults->addItem(item);
     }
+
+    // Automatically select the first item if results are available
+    if (ui->searchResults->count() > 0) {
+        ui->searchResults->setCurrentRow(0);
+    }
 }
 
 
@@ -263,6 +278,7 @@ void MainWindow::addToCart(QListWidgetItem* item)
         }
         existing->setData(QuantityRole, quantity);
         updateCartItemDisplay(existing);
+        ui->cartList->setCurrentItem(existing);
     } else {
         QListWidgetItem* cartItem = new QListWidgetItem();
         // Store the Product object and initial quantity
@@ -270,6 +286,7 @@ void MainWindow::addToCart(QListWidgetItem* item)
         cartItem->setData(QuantityRole, 1);
         updateCartItemDisplay(cartItem);
         ui->cartList->addItem(cartItem);
+        ui->cartList->setCurrentItem(cartItem);
     }
     updateCartTotals();
 }
@@ -443,4 +460,25 @@ void MainWindow::importNewCsv()
         updateResults(ui->searchBox->text());
         QMessageBox::information(this, "Success", "Database updated successfully.");
     }
+}
+
+bool MainWindow::eventFilter(QObject *obj, QEvent *event)
+{
+    if (obj == ui->searchBox && event->type() == QEvent::KeyPress) {
+        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+        if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
+            int count = ui->searchResults->count();
+            if (count > 0) {
+                int row = ui->searchResults->currentRow();
+                if (keyEvent->key() == Qt::Key_Up) {
+                    row = (row > 0) ? row - 1 : 0;
+                } else {
+                    row = (row < count - 1) ? row + 1 : count - 1;
+                }
+                ui->searchResults->setCurrentRow(row);
+                return true; // Mark event as handled
+            }
+        }
+    }
+    return QMainWindow::eventFilter(obj, event);
 }

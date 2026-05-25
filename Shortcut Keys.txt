@@ -1,0 +1,4 @@
+this file contians the shortcut keys for this application
+
+up and down arrow keys - navigate menu
+enter - add item to cart

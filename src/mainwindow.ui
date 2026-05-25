@@ -533,7 +533,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="statsSubLabel">
+              <widget class="QLabel" name="statsSubLabel1">
                <property name="text">
                 <string>distinct medicines in stock</string>
                </property>
@@ -587,7 +587,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLabel" name="statsSubLabel">
+              <widget class="QLabel" name="statsSubLabel2">
                <property name="text">
                 <string>retail price × current stock</string>
                </property>

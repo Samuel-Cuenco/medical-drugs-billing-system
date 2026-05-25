@@ -59,4 +59,6 @@ private:
     void initializeUIStates();
     void connectSignalsAndSlots();
     void initializeDatabase();
+
+    bool eventFilter(QObject *obj, QEvent *event) override;
 };
