@@ -1,6 +1,6 @@
 #pragma once
 #include <QMainWindow>
-#include <QtSql/QSqlDatabase>
+#include "databasemanager.h"
 #include <QListWidgetItem>
 #include <QPoint>
 
@@ -46,7 +46,7 @@ protected:
 
 private:
     Ui::MainWindow *ui;   // *replaces every individual widget pointer
-    QSqlDatabase db;
+    DatabaseManager *m_db;
     QPoint m_dragPosition;
 
     void updateCartItemDisplay(QListWidgetItem* item);

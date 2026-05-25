@@ -33,8 +33,7 @@ enum ItemDataRole {
 
 // *constructor
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
+    : QMainWindow(parent), ui(new Ui::MainWindow), m_db(new DatabaseManager())
 {
     ui->setupUi(this);
 
@@ -108,8 +107,8 @@ MainWindow::MainWindow(QWidget *parent)
         else if (QFile::exists(p2)) csvPath = p2;
     }
 
-    db = Helpers::openDatabase();
-    Helpers::importCsvToDatabase(csvPath, db);
+    m_db->open();
+    m_db->importCsv(csvPath);
 
     // *initial search load
     updateResults("");
@@ -117,6 +116,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 MainWindow::~MainWindow()
 {
+    delete m_db;
     delete ui;
 }
 
@@ -193,46 +193,16 @@ void MainWindow::updateResults(const QString &text)
     ui->searchResults->clear();
     QString trimmed = text.trimmed();
 
-    QSqlQuery query(db);
-    if (trimmed.isEmpty()) {
-        query.prepare(R"(
-            SELECT item_id, item_name, description, retail_price, stock
-            FROM products
-            LIMIT 999
-        )");
-    } else {
-        query.prepare(R"(
-            SELECT item_id, item_name, description, retail_price, stock
-            FROM products
-            WHERE item_name LIKE :term1
-               OR description LIKE :term2
-               OR item_id    LIKE :term3
-            LIMIT 999
-        )");
-        QString match = "%" + trimmed + "%";
-        query.bindValue(":term1", match);
-        query.bindValue(":term2", match);
-        query.bindValue(":term3", match);
-    }
+    QList<Product> products = m_db->searchProducts(trimmed);
 
-    if (!query.exec()) {
-        qWarning() << "Search query failed:" << query.lastError().text();
-        return;
-    }
-
-    while (query.next()) {
-        QString id    = query.value(0).toString();
-        QString name  = query.value(1).toString();
-        QString desc  = query.value(2).toString();
-        double  price = query.value(3).toDouble();
-        int     stock = query.value(4).toInt();
-
-        Product product = {id, name, desc, price, stock};
+    for (const Product& product : products) {
+        // The Product struct is already populated by DatabaseManager::searchProducts
+        // We just need to format the display text and set the data.
 
         QString itemText = QString("%1 | %2 | %3 | P%4 | stock:%5")
-                               .arg(id, name, desc)
-                               .arg(price, 0, 'f', 2)
-                               .arg(stock);
+                               .arg(product.id, product.name, product.description)
+                               .arg(product.price, 0, 'f', 2)
+                               .arg(product.stock);
 
         QListWidgetItem* item = new QListWidgetItem(itemText);
         // Store the entire Product object in the item's data
@@ -425,16 +395,13 @@ void MainWindow::checkout()
 
 void MainWindow::updateStock()
 {
-    QSqlQuery update(db);
-    update.prepare("UPDATE products SET stock = stock - :sold WHERE item_id = :id");
-
     for (int i = 0; i < ui->cartList->count(); ++i) {
         QListWidgetItem* item = ui->cartList->item(i);
         Product product = item->data(ProductObjectRole).value<Product>();
-        update.bindValue(":sold", item->data(QuantityRole).toInt()); // Quantity sold
-        update.bindValue(":id",   product.id); // Product ID
-        if (!update.exec())
-            qWarning() << "Failed to update stock:" << update.lastError().text();
+        int soldQuantity = item->data(QuantityRole).toInt();
+        if (!m_db->updateStock(product.id, soldQuantity)) {
+            qWarning() << "Failed to update stock for product:" << product.id;
+        }
     }
 }
 
@@ -442,30 +409,20 @@ void MainWindow::updateStock()
 // *statistics
 void MainWindow::refreshStats()
 {
-    QSqlQuery query(db);
-
-    if (query.exec("SELECT COUNT(*), SUM(retail_price * stock) FROM products") && query.next()) {
-        ui->totalProductsLabel->setText(query.value(0).toString());
-        double totalVal = query.value(1).toDouble();
-        ui->totalValueLabel->setText(QString("₱%1").arg(totalVal, 0, 'f', 2));
-    }
+    int totalProducts = 0;
+    double totalValue = 0.0;
+    m_db->getInventorySummary(totalProducts, totalValue);
+    ui->totalProductsLabel->setText(QString::number(totalProducts));
+    ui->totalValueLabel->setText(QString("₱%1").arg(totalValue, 0, 'f', 2));
 
     ui->lowStockList->clear();
-    query.prepare(
-        "SELECT item_name, stock, item_id FROM products "
-        "WHERE stock < 10 ORDER BY stock ASC");
-    if (query.exec()) {
-        while (query.next()) {
-            QString name  = query.value(0).toString();
-            int     stock = query.value(1).toInt();
-            QString id    = query.value(2).toString();
-
-            QListWidgetItem* item = new QListWidgetItem(
-                QString("⚠️ %1 (ID: %2) — Only %3 left").arg(name, id).arg(stock));
-            if (stock == 0)
-                item->setForeground(Qt::red);
-            ui->lowStockList->addItem(item);
-        }
+    QList<Product> lowStockProducts = m_db->getLowStockItems();
+    for (const Product& product : lowStockProducts) {
+        QListWidgetItem* item = new QListWidgetItem(
+            QString("⚠️ %1 (ID: %2) — Only %3 left").arg(product.name, product.id).arg(product.stock));
+        if (product.stock == 0)
+            item->setForeground(Qt::red);
+        ui->lowStockList->addItem(item);
     }
 }
 
@@ -476,7 +433,7 @@ void MainWindow::importNewCsv()
     QString fileName = QFileDialog::getOpenFileName(
         this, "Import Medicines", "", "CSV Files (*.csv)");
     if (!fileName.isEmpty()) {
-        Helpers::importCsvToDatabase(fileName, db);
+        m_db->importCsv(fileName); // Use the DatabaseManager to import
         updateResults(ui->searchBox->text());
         QMessageBox::information(this, "Success", "Database updated successfully.");
     }

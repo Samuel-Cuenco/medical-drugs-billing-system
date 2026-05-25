@@ -20,11 +20,13 @@ set(SOURCES #source files
     src/main.cpp
 
     src/helpers.cpp
+    src/databasemanager.cpp
 )
 
 set(HEADERS #header files
     include/mainwindow.h
     include/helpers.h
+    include/databasemanager.h
     include/models.h
 )
 
