@@ -70,11 +70,17 @@ void DatabaseManager::importCsv(const QString &csvPath) {
     QFile file(csvPath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
 
-    QSqlQuery query;
-    query.exec("DELETE FROM products"); // Clear existing for fresh import
-
+    m_db.transaction(); // Start transaction for speed and safety
+    
+    QSqlQuery query(m_db);
+    query.exec("DELETE FROM products");
+    
     QTextStream in(&file);
     bool firstLine = true;
+    
+    QSqlQuery insert(m_db);
+    insert.prepare("INSERT INTO products VALUES (:id, :name, :desc, :price, :stock)");
+
     while (!in.atEnd()) {
         QString line = in.readLine();
         if (firstLine) { firstLine = false; continue; }
@@ -82,15 +88,16 @@ void DatabaseManager::importCsv(const QString &csvPath) {
         QStringList fields = Helpers::parseCsvLine(line);
         if (fields.size() < 5) continue;
 
-        QSqlQuery insert;
-        insert.prepare("INSERT INTO products VALUES (:id, :name, :desc, :price, :stock)");
         insert.bindValue(":id", fields[0]);
         insert.bindValue(":name", fields[1]);
         insert.bindValue(":desc", fields[2]);
         insert.bindValue(":price", fields[3].toDouble());
         insert.bindValue(":stock", fields[4].toInt());
-        insert.exec();
+        if (!insert.exec()) {
+            qWarning() << "Import error:" << insert.lastError().text();
+        }
     }
+    m_db.commit();
 }
 
 void DatabaseManager::getInventorySummary(int &totalProducts, double &totalValue) {
@@ -108,7 +115,11 @@ QList<Product> DatabaseManager::getLowStockItems(int threshold) {
     query.bindValue(":limit", threshold);
     if (query.exec()) {
         while (query.next()) {
-            results.append({query.value(0).toString(), query.value(1).toString(), "", 0.0, query.value(4).toInt()});
+            results.append({query.value(0).toString(), 
+                            query.value(1).toString(), 
+                            query.value(2).toString(), 
+                            query.value(3).toDouble(), 
+                            query.value(4).toInt()});
         }
     }
     return results;

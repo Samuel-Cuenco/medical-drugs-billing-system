@@ -196,18 +196,8 @@ void MainWindow::updateResults(const QString &text)
     QList<Product> products = m_db->searchProducts(trimmed);
 
     for (const Product& product : products) {
-        // The Product struct is already populated by DatabaseManager::searchProducts
-        // We just need to format the display text and set the data.
-
-        QString itemText = QString("%1 | %2 | %3 | P%4 | stock:%5")
-                               .arg(product.id, product.name, product.description)
-                               .arg(product.price, 0, 'f', 2)
-                               .arg(product.stock);
-
-        QListWidgetItem* item = new QListWidgetItem(itemText);
-        // Store the entire Product object in the item's data
+        QListWidgetItem* item = new QListWidgetItem(product.toSearchString());
         item->setData(ProductObjectRole, QVariant::fromValue(product));
-
         ui->searchResults->addItem(item);
     }
 }
@@ -218,11 +208,7 @@ void MainWindow::updateCartItemDisplay(QListWidgetItem* item)
 {
     Product product = item->data(ProductObjectRole).value<Product>();
     int quantity = item->data(QuantityRole).toInt();
-
-    item->setText(QString("%1 x%2 — ₱%3 each — stock:%4 — ID:%5")
-                      .arg(product.name).arg(quantity)
-                      .arg(product.price, 0, 'f', 2)
-                      .arg(product.stock).arg(product.id));
+    item->setText(product.toCartString(quantity));
 }
 
 void MainWindow::addToCart(QListWidgetItem* item)
