@@ -36,82 +36,13 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), m_db(new DatabaseManager())
 {
     ui->setupUi(this);
-
-    QPixmap logo(":/images/app_icon.png");
-    ui->iconLabel->setPixmap(logo.scaled(28, 28, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-    ui->iconLabel->setText("");
-
-    setWindowTitle("Jupiter Pharmacy"); // window title
-    setWindowFlags(Qt::FramelessWindowHint); // remove title bar
-
-    // Register Product struct for QVariant usage
-    qRegisterMetaType<Product>();
-
-    // *load ui
-    Helpers::loadUI(this);
-
-    // *initial widget states
-    ui->quantityBox->setEnabled(false);
-    ui->plusButton->setEnabled(false);
-    ui->minusButton->setEnabled(false);
-
-    // *signal/slot connections
-    // *search
-    connect(ui->searchBox,     &QLineEdit::textChanged,
-            this,              &MainWindow::updateResults);
-    connect(ui->searchResults, &QListWidget::itemDoubleClicked,
-            this,              &MainWindow::addToCart);
-    connect(ui->searchResults, &QListWidget::currentItemChanged,
-            this,              &MainWindow::searchSelectionChanged);
-    connect(ui->addButton,     &QPushButton::clicked,
-            this,              &MainWindow::addSelectedSearchItem);
-
-    // *cart
-    connect(ui->cartList,       &QListWidget::currentItemChanged,
-            this,               &MainWindow::cartSelectionChanged);
-    connect(ui->plusButton,     &QPushButton::clicked,
-            this,               &MainWindow::increaseQuantity);
-    connect(ui->minusButton,    &QPushButton::clicked,
-            this,               &MainWindow::decreaseQuantity);
-    connect(ui->quantityBox,    qOverload<int>(&QSpinBox::valueChanged),
-            this,               &MainWindow::quantityChanged);
-    connect(ui->removeButton,   &QPushButton::clicked,
-            this,               &MainWindow::removeFromCart);
-    connect(ui->clearCartButton,&QPushButton::clicked,
-            this,               &MainWindow::clearCart);
-
-    // *checkout
-    connect(ui->checkoutButton, &QPushButton::clicked,
-            this,               &MainWindow::checkout);
-
-    // *navigation
-    connect(ui->billingNavBtn, &QPushButton::clicked,
-            this,              &MainWindow::showBillingPage);
-    connect(ui->statsNavBtn,   &QPushButton::clicked,
-            this,              &MainWindow::showStatsPage);
-    connect(ui->importBtn,     &QPushButton::clicked,
-            this,              &MainWindow::importNewCsv);
-
-    // *title bar
-    connect(ui->minBtn,   &QPushButton::clicked, this, &MainWindow::showMinimized);
-    connect(ui->maxBtn,   &QPushButton::clicked, this, &MainWindow::toggleMaximize);
-    connect(ui->closeBtn, &QPushButton::clicked, this, &MainWindow::close);
-
-    // *database
-    QString csvPath = "hospital_medicines.csv";
-    if (!QFile::exists(csvPath)) {
-        QString exeDir = QCoreApplication::applicationDirPath();
-        QString p1 = exeDir + "/hospital_medicines.csv";
-        QString p2 = exeDir + "/../hospital_medicines.csv";
-        if (QFile::exists(p1))      csvPath = p1;
-        else if (QFile::exists(p2)) csvPath = p2;
-    }
-
-    m_db->open();
-    m_db->importCsv(csvPath);
-
-    // *initial search load
-    updateResults("");
+    setupWindowProperties();
+    registerCustomTypes();
+    loadStylesheets();
+    initializeUIStates();
+    connectSignalsAndSlots();
+    initializeDatabase();
+    updateResults(""); // Initial search load
 }
 
 MainWindow::~MainWindow()
@@ -161,6 +92,95 @@ void MainWindow::toggleMaximize()
     }
 }
 
+// Private helper methods for constructor decomposition
+void MainWindow::setupWindowProperties()
+{
+    QPixmap logo(":/images/app_icon.png");
+    ui->iconLabel->setPixmap(logo.scaled(28, 28, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+    ui->iconLabel->setText("");
+
+    setWindowTitle("Jupiter Pharmacy");
+    setWindowFlags(Qt::FramelessWindowHint);
+}
+
+void MainWindow::registerCustomTypes()
+{
+    qRegisterMetaType<Product>();
+}
+
+void MainWindow::loadStylesheets()
+{
+    Helpers::loadUI(this);
+}
+
+void MainWindow::initializeUIStates()
+{
+    ui->quantityBox->setEnabled(false);
+    ui->plusButton->setEnabled(false);
+    ui->minusButton->setEnabled(false);
+    ui->removeButton->setEnabled(false); // Also disable remove button initially
+}
+
+void MainWindow::connectSignalsAndSlots()
+{
+    // Search
+    connect(ui->searchBox,     &QLineEdit::textChanged,
+            this,              &MainWindow::updateResults);
+    connect(ui->searchResults, &QListWidget::itemDoubleClicked,
+            this,              &MainWindow::addToCart);
+    connect(ui->searchResults, &QListWidget::currentItemChanged,
+            this,              &MainWindow::searchSelectionChanged);
+    connect(ui->addButton,     &QPushButton::clicked,
+            this,              &MainWindow::addSelectedSearchItem);
+
+    // Cart
+    connect(ui->cartList,       &QListWidget::currentItemChanged,
+            this,               &MainWindow::cartSelectionChanged);
+    connect(ui->plusButton,     &QPushButton::clicked,
+            this,               &MainWindow::increaseQuantity);
+    connect(ui->minusButton,    &QPushButton::clicked,
+            this,               &MainWindow::decreaseQuantity);
+    connect(ui->quantityBox,    qOverload<int>(&QSpinBox::valueChanged),
+            this,               &MainWindow::quantityChanged);
+    connect(ui->removeButton,   &QPushButton::clicked,
+            this,               &MainWindow::removeFromCart);
+    connect(ui->clearCartButton,&QPushButton::clicked,
+            this,               &MainWindow::clearCart);
+
+    // Checkout
+    connect(ui->checkoutButton, &QPushButton::clicked,
+            this,               &MainWindow::checkout);
+
+    // Navigation
+    connect(ui->billingNavBtn, &QPushButton::clicked,
+            this,              &MainWindow::showBillingPage);
+    connect(ui->statsNavBtn,   &QPushButton::clicked,
+            this,              &MainWindow::showStatsPage);
+    connect(ui->importBtn,     &QPushButton::clicked,
+            this,              &MainWindow::importNewCsv);
+
+    // Title bar
+    connect(ui->minBtn,   &QPushButton::clicked, this, &MainWindow::showMinimized);
+    connect(ui->maxBtn,   &QPushButton::clicked, this, &MainWindow::toggleMaximize);
+    connect(ui->closeBtn, &QPushButton::clicked, this, &MainWindow::close);
+}
+
+void MainWindow::initializeDatabase()
+{
+    m_db->open();
+    if (m_db->isDatabaseEmpty()) { // Only import CSV if the database is empty
+        QString csvPath = "hospital_medicines.csv";
+        // Existing logic to find CSV path
+        if (!QFile::exists(csvPath)) {
+            QString exeDir = QCoreApplication::applicationDirPath();
+            QString p1 = exeDir + "/hospital_medicines.csv";
+            QString p2 = exeDir + "/../hospital_medicines.csv";
+            if (QFile::exists(p1))      csvPath = p1;
+            else if (QFile::exists(p2)) csvPath = p2;
+        }
+        m_db->importCsv(csvPath);
+    }
+}
 
 // *navigation
 void MainWindow::showBillingPage()

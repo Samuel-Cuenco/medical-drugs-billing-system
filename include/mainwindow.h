@@ -51,4 +51,12 @@ private:
 
     void updateCartItemDisplay(QListWidgetItem* item);
     void refreshStats();
+
+    // Private helper methods for constructor decomposition
+    void setupWindowProperties();
+    void registerCustomTypes();
+    void loadStylesheets();
+    void initializeUIStates();
+    void connectSignalsAndSlots();
+    void initializeDatabase();
 };

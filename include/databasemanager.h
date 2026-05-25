@@ -19,6 +19,7 @@ public:
     // Statistics
     void getInventorySummary(int &totalProducts, double &totalValue);
     QList<Product> getLowStockItems(int threshold = 10);
+    bool isDatabaseEmpty() const;
 
 private:
     QSqlDatabase m_db;
