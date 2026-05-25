@@ -44,3 +44,4 @@ ui_*.h
 
 # Additional Ignore List
 notes.txt
+/ignore

@@ -25,6 +25,7 @@ set(SOURCES #source files
 set(HEADERS #header files
     include/mainwindow.h
     include/helpers.h
+    include/models.h
 )
 
 #set(UIS #ui files
