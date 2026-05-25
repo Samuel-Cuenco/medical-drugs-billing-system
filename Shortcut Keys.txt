@@ -1,4 +1,11 @@
 this file contians the shortcut keys for this application
 
 up and down arrow keys - navigate menu
-enter - add item to cart
+left / right arrows    - switch focus between search and cart
+enter                  - add item to cart
+ctrl + 1               - billing tab
+ctrl + 2               - statistics tab
+ctrl + i               - import stock csv
+delete                 - remove selected item from cart
+ctrl + delete          - clear cart
+f5                     - checkout

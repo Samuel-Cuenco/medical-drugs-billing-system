@@ -160,6 +160,7 @@ void MainWindow::connectSignalsAndSlots()
 
     // Install event filter for searchBox to handle arrow keys
     ui->searchBox->installEventFilter(this);
+    ui->cartList->installEventFilter(this);
 
     // Navigation
     connect(ui->billingNavBtn, &QPushButton::clicked,
@@ -168,6 +169,14 @@ void MainWindow::connectSignalsAndSlots()
             this,              &MainWindow::showStatsPage);
     connect(ui->importBtn,     &QPushButton::clicked,
             this,              &MainWindow::importNewCsv);
+
+    // Set Shortcuts for quicker operation
+    ui->billingNavBtn->setShortcut(QKeySequence("Ctrl+1"));
+    ui->statsNavBtn->setShortcut(QKeySequence("Ctrl+2"));
+    ui->importBtn->setShortcut(QKeySequence("Ctrl+I"));
+    ui->checkoutButton->setShortcut(QKeySequence("F5"));
+    ui->clearCartButton->setShortcut(QKeySequence("Ctrl+Del"));
+    ui->removeButton->setShortcut(QKeySequence("Del"));
 
     // Title bar
     connect(ui->minBtn,   &QPushButton::clicked, this, &MainWindow::showMinimized);
@@ -464,19 +473,32 @@ void MainWindow::importNewCsv()
 
 bool MainWindow::eventFilter(QObject *obj, QEvent *event)
 {
-    if (obj == ui->searchBox && event->type() == QEvent::KeyPress) {
+    if (event->type() == QEvent::KeyPress) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-        if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
-            int count = ui->searchResults->count();
-            if (count > 0) {
-                int row = ui->searchResults->currentRow();
-                if (keyEvent->key() == Qt::Key_Up) {
-                    row = (row > 0) ? row - 1 : 0;
-                } else {
-                    row = (row < count - 1) ? row + 1 : count - 1;
+
+        // Focus is on Search Box
+        if (obj == ui->searchBox) {
+            if (keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
+                int count = ui->searchResults->count();
+                if (count > 0) {
+                    int row = ui->searchResults->currentRow();
+                    if (keyEvent->key() == Qt::Key_Up) row = (row > 0) ? row - 1 : 0;
+                    else row = (row < count - 1) ? row + 1 : count - 1;
+                    ui->searchResults->setCurrentRow(row);
+                    return true;
                 }
-                ui->searchResults->setCurrentRow(row);
-                return true; // Mark event as handled
+            } else if (keyEvent->key() == Qt::Key_Right) {
+                ui->cartList->setFocus();
+                if (ui->cartList->count() > 0 && !ui->cartList->currentItem())
+                    ui->cartList->setCurrentRow(0);
+                return true;
+            }
+        }
+        // Focus is on Cart List
+        else if (obj == ui->cartList) {
+            if (keyEvent->key() == Qt::Key_Left) {
+                ui->searchBox->setFocus();
+                return true;
             }
         }
     }
