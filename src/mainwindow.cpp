@@ -119,8 +119,6 @@ void MainWindow::connectSignalsAndSlots() {
     // Search
     connect(ui->searchBox,     &QLineEdit::textChanged,
             this,              &MainWindow::updateResults);
-    connect(ui->searchResults, &QListWidget::itemDoubleClicked,
-            this,              &MainWindow::addToCart);
     connect(ui->searchResults, &QListWidget::currentItemChanged,
             this,              &MainWindow::searchSelectionChanged);
     // Allow adding the selected item to cart by pressing Enter on search results
