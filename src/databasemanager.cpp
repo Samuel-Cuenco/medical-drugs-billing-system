@@ -34,6 +34,26 @@ bool DatabaseManager::open() {
         qCritical() << "Error creating products table:" << query.lastError().text();
         return false;
     }
+
+    if (!query.exec(R"(
+        CREATE TABLE IF NOT EXISTS transactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            total_amount REAL,
+            received REAL,
+            change_amount REAL
+        )
+    )")) return false;
+
+    if (!query.exec(R"(
+        CREATE TABLE IF NOT EXISTS transaction_items (
+            transaction_id INTEGER,
+            product_id TEXT,
+            quantity INTEGER,
+            price REAL
+        )
+    )")) return false;
+
     return true;
 }
 

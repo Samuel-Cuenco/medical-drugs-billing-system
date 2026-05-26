@@ -37,6 +37,7 @@ private slots:
     // *navigation
     void showBillingPage();
     void showStatsPage();
+    void showHistoryPage();
     void importNewCsv();
 
 protected:

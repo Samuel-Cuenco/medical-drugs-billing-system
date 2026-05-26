@@ -178,7 +178,7 @@
          <string>Go to Billing / POS</string>
         </property>
         <property name="text">
-         <string>⭐ Billing</string>
+         <string>⭐  Billing</string>
         </property>
        </widget>
       </item>
@@ -189,6 +189,16 @@
         </property>
         <property name="text">
          <string>⭐  Statistics</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="historyNavBtn">
+        <property name="toolTip">
+         <string>View Transaction History</string>
+        </property>
+        <property name="text">
+         <string>⭐  History</string>
         </property>
        </widget>
       </item>
@@ -610,6 +620,66 @@
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="historyPage">
+       <layout class="QVBoxLayout" name="historyLayout">
+        <property name="spacing">
+         <number>16</number>
+        </property>
+        <property name="leftMargin">
+         <number>28</number>
+        </property>
+        <property name="topMargin">
+         <number>24</number>
+        </property>
+        <property name="rightMargin">
+         <number>28</number>
+        </property>
+        <property name="bottomMargin">
+         <number>24</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="historyHeaderRow">
+          <item>
+           <widget class="QLabel" name="historyHeader">
+            <property name="text">
+             <string>Transaction History</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="historyHeaderSpacer">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTreeWidget" name="historyTree">
+          <property name="alternatingRowColors">
+           <bool>true</bool>
+          </property>
+          <column>
+           <property name="text">
+            <string>Order Details / Items</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Amount</string>
+           </property>
+          </column>
          </widget>
         </item>
        </layout>

@@ -15,8 +15,11 @@
 #include <QSqlError> // catches sql errors
 #include <QFile> // reading and writing files - better compatibility for qt afaik compared to cpp file stream
 #include <QTextStream> // format and read human text
+#include <QTreeWidget>
 #include <QListWidget> // create container for items
 #include <QListWidgetItem> // put items into listwidget
+#include <QDateTime>
+#include <QTimeZone>
 #include <QLineEdit> // single line entry, easier to understand that it takes single line of text
 #include <QMessageBox> // send a pop up dialog box
 #include <QInputDialog> // for handling cash received input
@@ -156,12 +159,15 @@ void MainWindow::connectSignalsAndSlots() {
             this,              &MainWindow::showBillingPage);
     connect(ui->statsNavBtn,   &QPushButton::clicked,
             this,              &MainWindow::showStatsPage);
+    connect(ui->historyNavBtn, &QPushButton::clicked,
+            this,              &MainWindow::showHistoryPage);
     connect(ui->importBtn,     &QPushButton::clicked,
             this,              &MainWindow::importNewCsv);
 
     // Set Shortcuts for quicker operation
     ui->billingNavBtn->setShortcut(QKeySequence("Ctrl+1"));
     ui->statsNavBtn->setShortcut(QKeySequence("Ctrl+2"));
+    ui->historyNavBtn->setShortcut(QKeySequence("Ctrl+3"));
     ui->importBtn->setShortcut(QKeySequence("Ctrl+I"));
     ui->checkoutButton->setShortcut(QKeySequence("F5"));
     ui->clearCartButton->setShortcut(QKeySequence("Ctrl+Del"));
@@ -197,6 +203,53 @@ void MainWindow::showBillingPage() {
 void MainWindow::showStatsPage() {
     refreshStats();
     ui->stackedWidget->setCurrentWidget(ui->statsPage);
+}
+
+void MainWindow::showHistoryPage() {
+    ui->historyTree->clear();
+    ui->historyTree->setColumnWidth(0, 400); // Give enough space for item names
+    
+    QSqlQuery query("SELECT id, timestamp, total_amount FROM transactions ORDER BY timestamp DESC LIMIT 100");
+    
+    while (query.next()) {
+        int id = query.value(0).toInt();
+        QDateTime dt = query.value(1).toDateTime();
+        dt = QDateTime(dt.date(), dt.time(), QTimeZone::utc()); // Re-interpret DB time as UTC
+        QString ts = dt.toLocalTime().toString("MMM dd, yyyy - hh:mm AP");
+        double total = query.value(2).toDouble();
+
+        // Parent Item: The Transaction Summary
+        QTreeWidgetItem* orderItem = new QTreeWidgetItem(ui->historyTree);
+        orderItem->setText(0, QString("Order #%1  [%2]").arg(id, 5, 10, QChar('0')).arg(ts));
+        orderItem->setText(1, QString("₱%1").arg(total, 0, 'f', 2));
+        
+        // Emphasize the parent row
+        QFont boldFont;
+        boldFont.setBold(true);
+        orderItem->setFont(0, boldFont);
+        orderItem->setFont(1, boldFont);
+
+        // Sub-query: Get individual items for this order
+        QSqlQuery itemQuery;
+        itemQuery.prepare("SELECT p.item_name, ti.quantity, ti.price FROM transaction_items ti "
+                          "JOIN products p ON ti.product_id = p.item_id WHERE ti.transaction_id = :id");
+        itemQuery.bindValue(":id", id);
+        
+        if (itemQuery.exec()) {
+            while (itemQuery.next()) {
+                QTreeWidgetItem* child = new QTreeWidgetItem(orderItem);
+                QString name = itemQuery.value(0).toString();
+                int qty = itemQuery.value(1).toInt();
+                double price = itemQuery.value(2).toDouble();
+                
+                child->setText(0, QString(" • %1 (x%2)").arg(name).arg(qty));
+                child->setText(1, QString("₱%1").arg(price * qty, 0, 'f', 2));
+                child->setForeground(0, QBrush(QColor("#6a8fb5"))); // Subtle blue for items
+            }
+        }
+    }
+    
+    ui->stackedWidget->setCurrentWidget(ui->historyPage);
 }
 
 // *search
@@ -400,11 +453,35 @@ void MainWindow::checkout() {
 
     double change = received - total;
 
-    QMessageBox::information(this, "Sale Complete",
-                             QString("Total Due: ₱%1\nAmount Received: ₱%2\nChange: ₱%3")
-                             .arg(total, 0, 'f', 2)
-                             .arg(received, 0, 'f', 2)
-                             .arg(change, 0, 'f', 2));
+    // Save Transaction to Database
+    QSqlQuery tQuery;
+    tQuery.prepare("INSERT INTO transactions (total_amount, received, change_amount) VALUES (:t, :r, :c)");
+    tQuery.bindValue(":t", total);
+    tQuery.bindValue(":r", received);
+    tQuery.bindValue(":c", change);
+
+    if (tQuery.exec()) {
+        qlonglong transactionId = tQuery.lastInsertId().toLongLong();
+        QSqlQuery itemQuery;
+        itemQuery.prepare("INSERT INTO transaction_items (transaction_id, product_id, quantity, price) "
+                          "VALUES (:tid, :pid, :q, :p)");
+
+        for (int i = 0; i < ui->cartList->count(); ++i) {
+            QListWidgetItem* item = ui->cartList->item(i);
+            Product product = item->data(ProductObjectRole).value<Product>();
+            itemQuery.bindValue(":tid", transactionId);
+            itemQuery.bindValue(":pid", product.id);
+            itemQuery.bindValue(":q", item->data(QuantityRole).toInt());
+            itemQuery.bindValue(":p", product.price);
+            itemQuery.exec();
+        }
+
+        QMessageBox::information(this, "Sale Complete",
+                                 QString("Total Due: ₱%1\nAmount Received: ₱%2\nChange: ₱%3")
+                                 .arg(total, 0, 'f', 2)
+                                 .arg(received, 0, 'f', 2)
+                                 .arg(change, 0, 'f', 2));
+    }
 
     updateStock();
     ui->cartList->clear();
