@@ -19,6 +19,7 @@
 #include <QListWidgetItem> // put items into listwidget
 #include <QLineEdit> // single line entry, easier to understand that it takes single line of text
 #include <QMessageBox> // send a pop up dialog box
+#include <QInputDialog> // for handling cash received input
 #include <QDir> // navigate file system
 #include <QSpinBox> // an input box for numbers specifically
 #include <QFileDialog>
@@ -34,8 +35,7 @@ enum ItemDataRole {
 
 // *constructor
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), ui(new Ui::MainWindow), m_db(new DatabaseManager())
-{
+    : QMainWindow(parent), ui(new Ui::MainWindow), m_db(new DatabaseManager()) {
     ui->setupUi(this);
     setupWindowProperties();
     registerCustomTypes();
@@ -46,24 +46,20 @@ MainWindow::MainWindow(QWidget *parent)
     updateResults(""); // Initial search load
 }
 
-MainWindow::~MainWindow()
-{
+MainWindow::~MainWindow() {
     delete m_db;
     delete ui;
 }
 
-
 // *window drag & maximize (frameless window helpers)
-void MainWindow::mousePressEvent(QMouseEvent *event)
-{
+void MainWindow::mousePressEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton && event->position().y() < 40) {
         m_dragPosition = event->globalPosition().toPoint() - frameGeometry().topLeft();
         event->accept();
     }
 }
 
-void MainWindow::mouseMoveEvent(QMouseEvent *event)
-{
+void MainWindow::mouseMoveEvent(QMouseEvent *event) {
     if (event->buttons() & Qt::LeftButton) {
         if (isMaximized()) {
             toggleMaximize();
@@ -74,14 +70,12 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
-void MainWindow::mouseDoubleClickEvent(QMouseEvent *event)
-{
+void MainWindow::mouseDoubleClickEvent(QMouseEvent *event) {
     if (event->button() == Qt::LeftButton && event->position().y() < 40)
         toggleMaximize();
 }
 
-void MainWindow::toggleMaximize()
-{
+void MainWindow::toggleMaximize() {
     if (isMaximized()) {
         showNormal();
         ui->maxBtn->setText("▢");
@@ -94,8 +88,7 @@ void MainWindow::toggleMaximize()
 }
 
 // Private helper methods for constructor decomposition
-void MainWindow::setupWindowProperties()
-{
+void MainWindow::setupWindowProperties() {
     QPixmap logo(":/images/app_icon.png");
     ui->iconLabel->setPixmap(logo.scaled(28, 28, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     ui->iconLabel->setText("");
@@ -104,26 +97,22 @@ void MainWindow::setupWindowProperties()
     setWindowFlags(Qt::FramelessWindowHint);
 }
 
-void MainWindow::registerCustomTypes()
-{
+void MainWindow::registerCustomTypes() {
     qRegisterMetaType<Product>();
 }
 
-void MainWindow::loadStylesheets()
-{
+void MainWindow::loadStylesheets() {
     Helpers::loadUI(this);
 }
 
-void MainWindow::initializeUIStates()
-{
+void MainWindow::initializeUIStates() {
     ui->quantityBox->setEnabled(false);
     ui->plusButton->setEnabled(false);
     ui->minusButton->setEnabled(false);
     ui->removeButton->setEnabled(false); // Also disable remove button initially
 }
 
-void MainWindow::connectSignalsAndSlots()
-{
+void MainWindow::connectSignalsAndSlots() {
     // Search
     connect(ui->searchBox,     &QLineEdit::textChanged,
             this,              &MainWindow::updateResults);
@@ -184,8 +173,7 @@ void MainWindow::connectSignalsAndSlots()
     connect(ui->closeBtn, &QPushButton::clicked, this, &MainWindow::close);
 }
 
-void MainWindow::initializeDatabase()
-{
+void MainWindow::initializeDatabase() {
     m_db->open();
     if (m_db->isDatabaseEmpty()) { // Only import CSV if the database is empty
         QString csvPath = "hospital_medicines.csv";
@@ -202,33 +190,27 @@ void MainWindow::initializeDatabase()
 }
 
 // *navigation
-void MainWindow::showBillingPage()
-{
+void MainWindow::showBillingPage() {
     ui->stackedWidget->setCurrentWidget(ui->billingPage);
 }
 
-void MainWindow::showStatsPage()
-{
+void MainWindow::showStatsPage() {
     refreshStats();
     ui->stackedWidget->setCurrentWidget(ui->statsPage);
 }
 
-
 // *search
-void MainWindow::searchSelectionChanged(QListWidgetItem* current, QListWidgetItem*)
-{
+void MainWindow::searchSelectionChanged(QListWidgetItem* current, QListWidgetItem*) {
     ui->addButton->setEnabled(current != nullptr);
 }
 
-void MainWindow::addSelectedSearchItem()
-{
+void MainWindow::addSelectedSearchItem() {
     QListWidgetItem* current = ui->searchResults->currentItem();
     if (current)
         addToCart(current);
 }
 
-void MainWindow::updateResults(const QString &text)
-{
+void MainWindow::updateResults(const QString &text) {
     ui->searchResults->clear();
     QString trimmed = text.trimmed();
 
@@ -248,15 +230,13 @@ void MainWindow::updateResults(const QString &text)
 
 
 // *cart
-void MainWindow::updateCartItemDisplay(QListWidgetItem* item)
-{
+void MainWindow::updateCartItemDisplay(QListWidgetItem* item) {
     Product product = item->data(ProductObjectRole).value<Product>();
     int quantity = item->data(QuantityRole).toInt();
     item->setText(product.toCartString(quantity));
 }
 
-void MainWindow::addToCart(QListWidgetItem* item)
-{
+void MainWindow::addToCart(QListWidgetItem* item) {
     if (!item) return;
 
     Product product = item->data(ProductObjectRole).value<Product>();
@@ -300,8 +280,7 @@ void MainWindow::addToCart(QListWidgetItem* item)
     updateCartTotals();
 }
 
-void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem*)
-{
+void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem*) {
     bool hasItem = current != nullptr;
     ui->quantityBox->setEnabled(hasItem);
     ui->plusButton->setEnabled(hasItem);
@@ -312,8 +291,7 @@ void MainWindow::cartSelectionChanged(QListWidgetItem* current, QListWidgetItem*
         ui->quantityBox->setValue(current->data(QuantityRole).toInt()); // Retrieve quantity
 }
 
-void MainWindow::increaseQuantity()
-{
+void MainWindow::increaseQuantity() {
     QListWidgetItem* current = ui->cartList->currentItem();
     if (!current) return;
     
@@ -331,8 +309,7 @@ void MainWindow::increaseQuantity()
     updateCartTotals();
 }
 
-void MainWindow::decreaseQuantity()
-{
+void MainWindow::decreaseQuantity() {
     QListWidgetItem* current = ui->cartList->currentItem();
     if (!current) return;
 
@@ -348,8 +325,7 @@ void MainWindow::decreaseQuantity()
     updateCartTotals();
 }
 
-void MainWindow::quantityChanged(int value)
-{
+void MainWindow::quantityChanged(int value) {
     QListWidgetItem* current = ui->cartList->currentItem();
     if (!current) return;
 
@@ -366,8 +342,7 @@ void MainWindow::quantityChanged(int value)
     updateCartTotals();
 }
 
-void MainWindow::updateCartTotals()
-{
+void MainWindow::updateCartTotals() {
     double total = 0.0;
     for (int i = 0; i < ui->cartList->count(); ++i) {
         QListWidgetItem* item = ui->cartList->item(i);
@@ -377,8 +352,7 @@ void MainWindow::updateCartTotals()
     ui->totalLabel->setText(QString("Total: ₱%1").arg(total, 0, 'f', 2));
 }
 
-void MainWindow::removeFromCart()
-{
+void MainWindow::removeFromCart() {
     QListWidgetItem* current = ui->cartList->currentItem();
     if (current) {
         delete current;
@@ -386,8 +360,7 @@ void MainWindow::removeFromCart()
     }
 }
 
-void MainWindow::clearCart()
-{
+void MainWindow::clearCart() {
     ui->cartList->clear();
     updateCartTotals();
     ui->quantityBox->setEnabled(false);
@@ -398,8 +371,7 @@ void MainWindow::clearCart()
 
 
 // *checkout
-void MainWindow::checkout()
-{
+void MainWindow::checkout() {
     if (ui->cartList->count() == 0) {
         QMessageBox::information(this, "Checkout", "Cart is empty.");
         return;
@@ -412,8 +384,27 @@ void MainWindow::checkout()
         total += product.price * item->data(QuantityRole).toInt();
     }
 
-    QMessageBox::information(this, "Checkout",
-                             QString("Total due: ₱%1\nSale complete.").arg(total, 0, 'f', 2));
+    bool ok;
+    double received = QInputDialog::getDouble(this, "Payment",
+                                              QString("Total Due: ₱%1\nAmount Received:").arg(total, 0, 'f', 2),
+                                              total, 0, 1000000, 2, &ok);
+
+    if (!ok) return; // User cancelled the payment dialog
+
+    if (received < total) {
+        QMessageBox::warning(this, "Insufficient Payment",
+                             QString("The amount received (₱%1) is less than the total due (₱%2).")
+                             .arg(received, 0, 'f', 2).arg(total, 0, 'f', 2));
+        return;
+    }
+
+    double change = received - total;
+
+    QMessageBox::information(this, "Sale Complete",
+                             QString("Total Due: ₱%1\nAmount Received: ₱%2\nChange: ₱%3")
+                             .arg(total, 0, 'f', 2)
+                             .arg(received, 0, 'f', 2)
+                             .arg(change, 0, 'f', 2));
 
     updateStock();
     ui->cartList->clear();
@@ -425,8 +416,7 @@ void MainWindow::checkout()
     updateResults(ui->searchBox->text());
 }
 
-void MainWindow::updateStock()
-{
+void MainWindow::updateStock() {
     for (int i = 0; i < ui->cartList->count(); ++i) {
         QListWidgetItem* item = ui->cartList->item(i);
         Product product = item->data(ProductObjectRole).value<Product>();
@@ -471,8 +461,7 @@ void MainWindow::importNewCsv()
     }
 }
 
-bool MainWindow::eventFilter(QObject *obj, QEvent *event)
-{
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     if (event->type() == QEvent::KeyPress) {
         QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
 
