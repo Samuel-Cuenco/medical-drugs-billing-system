@@ -27,6 +27,7 @@
 #include <QSpinBox> // an input box for numbers specifically
 #include <QFileDialog>
 #include <QMouseEvent>
+#include <QButtonGroup>
 
 // Define roles for QListWidgetItem data
 enum ItemDataRole {
@@ -113,6 +114,18 @@ void MainWindow::initializeUIStates() {
     ui->plusButton->setEnabled(false);
     ui->minusButton->setEnabled(false);
     ui->removeButton->setEnabled(false); // Also disable remove button initially
+
+    QButtonGroup* navGroup = new QButtonGroup(this);
+    navGroup->addButton(ui->billingNavBtn);
+    navGroup->addButton(ui->statsNavBtn);
+    navGroup->addButton(ui->historyNavBtn);
+    navGroup->setExclusive(true);
+
+    ui->billingNavBtn->setCheckable(true);
+    ui->statsNavBtn->setCheckable(true);
+    ui->historyNavBtn->setCheckable(true);
+
+    ui->billingNavBtn->setChecked(true);
 }
 
 void MainWindow::connectSignalsAndSlots() {

@@ -46,7 +46,7 @@
     border-bottom: 2px solid #f4a827;
 }
 
-#billingNavBtn, #statsNavBtn {
+#billingNavBtn, #statsNavBtn, #historyNavBtn {
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
@@ -57,7 +57,13 @@
     color: #222222;
     border-radius: 0px;
 }
-#billingNavBtn:hover, #statsNavBtn:hover {
+#billingNavBtn:hover, #statsNavBtn:hover, #historyNavBtn:hover {
+    color: #3b86ff;
+    border-bottom: 3px solid #3b86ff;
+    background: rgba(244,168,39,0.08);
+}
+
+#billingNavBtn:checked, #statsNavBtn:checked, #historyNavBtn:checked {
     color: #3b86ff;
     border-bottom: 3px solid #3b86ff;
     background: rgba(244,168,39,0.08);
@@ -272,6 +278,7 @@ QFrame#cardProducts, QFrame#cardValue, QFrame#cardSold {
 QLabel#statsHeader {
     font-size: 22px;
     font-weight: bold;
+    letter-spacing: 3px;
     color: #0d1b2a;
 }
 
@@ -300,3 +307,30 @@ QLabel#statsSubLabel {
     color: #5a7a9b;
     border: none;
 }
+
+/* history page */
+
+#historyTree{
+    min-width: 70px;
+    font-family: "Copperplate Gothic Light", "Copperplate Gothic", sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #000000;
+}
+
+#historyHeader{
+    font-size: 22px;
+    font-weight: bold;
+    letter-spacing: 3px;
+    color: #0d1b2a;
+}
+
+QTreeWidget#historyTree{
+    font-family: "Copperplate Gothic Light", "Copperplate Gothic", sans-serif;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: #000000;
+}
+
+
+
