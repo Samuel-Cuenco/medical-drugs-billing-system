@@ -64,7 +64,6 @@
 }
 
 #billingNavBtn:checked, #statsNavBtn:checked, #historyNavBtn:checked {
-    color: #3b86ff;
     border-bottom: 3px solid #3b86ff;
     background: rgba(244,168,39,0.08);
 }
