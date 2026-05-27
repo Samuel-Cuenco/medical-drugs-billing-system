@@ -88,6 +88,22 @@
        </spacer>
       </item>
       <item>
+       <widget class="QPushButton" name="logoutBtn">
+        <property name="minimumSize">
+         <size>
+          <width>80</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>Logout and switch user</string>
+        </property>
+        <property name="text">
+         <string>Logout 🔓</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="minBtn">
         <property name="minimumSize">
          <size>

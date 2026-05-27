@@ -39,6 +39,7 @@ private slots:
     void showStatsPage();
     void showHistoryPage();
     void importNewCsv();
+    void handleLogout();
 
 protected:
     void mousePressEvent(QMouseEvent *event) override;

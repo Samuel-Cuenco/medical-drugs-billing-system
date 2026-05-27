@@ -128,11 +128,13 @@ void MainWindow::initializeUIStates() {
     ui->minusButton->setEnabled(false);
     ui->removeButton->setEnabled(false); // Also disable remove button initially
 
-    QButtonGroup* navGroup = new QButtonGroup(this);
-    navGroup->addButton(ui->billingNavBtn);
-    navGroup->addButton(ui->statsNavBtn);
-    navGroup->addButton(ui->historyNavBtn);
-    navGroup->setExclusive(true);
+    if (!ui->billingNavBtn->group()) {
+        QButtonGroup* navGroup = new QButtonGroup(this);
+        navGroup->addButton(ui->billingNavBtn);
+        navGroup->addButton(ui->statsNavBtn);
+        navGroup->addButton(ui->historyNavBtn);
+        navGroup->setExclusive(true);
+    }
 
     ui->billingNavBtn->setCheckable(true);
     ui->statsNavBtn->setCheckable(true);
@@ -193,6 +195,8 @@ void MainWindow::connectSignalsAndSlots() {
             this,              &MainWindow::showHistoryPage);
     connect(ui->importBtn,     &QPushButton::clicked,
             this,              &MainWindow::importNewCsv);
+    connect(ui->logoutBtn,     &QPushButton::clicked,
+            this,              &MainWindow::handleLogout);
 
     // Set Shortcuts for quicker operation
     ui->billingNavBtn->setShortcut(QKeySequence("Ctrl+1"));
@@ -310,6 +314,26 @@ void MainWindow::showHistoryPage() {
     
     ui->historyTree->expandAll(); // Automatically expand all orders to show discounts and items
     ui->stackedWidget->setCurrentWidget(ui->historyPage);
+}
+
+void MainWindow::handleLogout() {
+    this->hide(); // Hide the window for security during the switch
+
+    LoginDialog login(this);
+    login.setWindowTitle("Switch User");
+    
+    if (login.exec() == QDialog::Accepted) {
+        clearCart(); // Clear current cart for the new user session
+        m_currentUserId = login.loggedInUserId();
+        m_currentUserRole = login.loggedInRole();
+        
+        initializeUIStates(); // Refresh UI gating (History, Stats, etc.)
+        showBillingPage();    // Return to billing
+        updateResults("");    // Refresh search results
+        this->show();         // Reveal window for the new user
+    } else {
+        this->close();        // Exit the app if the new login is cancelled
+    }
 }
 
 // *search
