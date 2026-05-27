@@ -23,6 +23,7 @@ set(SOURCES #source files
     src/helpers.cpp
     src/databasemanager.cpp
     src/paymentdialog.cpp
+    src/logindialog.cpp
 )
 
 set(HEADERS #header files
@@ -31,11 +32,13 @@ set(HEADERS #header files
     include/databasemanager.h
     include/models.h
     include/paymentdialog.h
+    include/logindialog.h
 )
 
 set(UIS #ui files
     src/mainwindow.ui
     src/paymentdialog.ui
+    src/logindialog.ui
 )
 
 set(RESOURCES #resource files

@@ -1,16 +1,18 @@
 #include "paymentdialog.h"
 #include "ui_paymentdialog.h"
+#include "logindialog.h"
 #include <QMessageBox>
 #include <QDoubleValidator>
 #include <QPushButton> // Required for buttonBox->button()
 
-PaymentDialog::PaymentDialog(double originalTotal, QWidget *parent) :
+PaymentDialog::PaymentDialog(double originalTotal, const QString &userRole, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::PaymentDialog),
     m_originalTotal(originalTotal),
     m_finalTotal(originalTotal),
     m_discountAmount(0.0),
     m_discountType("None"),
+    m_currentUserRole(userRole),
     m_isSeniorPwdApplied(false),
     m_userEditedCashReceived(false) // Initialize the new flag
 {
@@ -117,6 +119,29 @@ void PaymentDialog::on_cashReceivedLineEdit_textChanged(const QString &arg1)
 
 void PaymentDialog::on_seniorPwdCheckBox_toggled(bool checked)
 {
+    // Requirement: Senior/PWD discount requires Manager (Admin) authorization
+    if (checked && m_currentUserRole != "Admin") {
+        LoginDialog auth(this);
+        auth.setWindowTitle("Manager Authorization");
+        
+        if (auth.exec() == QDialog::Accepted) {
+            if (auth.loggedInRole() != "Admin") {
+                QMessageBox::warning(this, "Access Denied", "Only a manager or admin can authorize this discount.");
+                ui->seniorPwdCheckBox->blockSignals(true);
+                ui->seniorPwdCheckBox->setChecked(false);
+                ui->seniorPwdCheckBox->blockSignals(false);
+                return;
+            }
+            m_currentUserRole = "Admin"; // Privilege escalation for this specific dialog instance
+        } else {
+            // User cancelled the login prompt
+            ui->seniorPwdCheckBox->blockSignals(true);
+            ui->seniorPwdCheckBox->setChecked(false);
+            ui->seniorPwdCheckBox->blockSignals(false);
+            return;
+        }
+    }
+
     m_isSeniorPwdApplied = checked;
     updateTotals();
     ui->cashReceivedLineEdit->setFocus();

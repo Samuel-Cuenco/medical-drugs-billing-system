@@ -60,6 +60,8 @@ private:
     void initializeUIStates();
     void connectSignalsAndSlots();
     void initializeDatabase();
+    int m_currentUserId;
+    QString m_currentUserRole;
 
     bool eventFilter(QObject *obj, QEvent *event) override;
 };

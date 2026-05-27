@@ -12,7 +12,7 @@ class PaymentDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit PaymentDialog(double originalTotal, QWidget *parent = nullptr);
+    explicit PaymentDialog(double originalTotal, const QString &userRole, QWidget *parent = nullptr);
     ~PaymentDialog();
 
     double getReceivedAmount() const;
@@ -30,6 +30,7 @@ private:
     double m_finalTotal;
     double m_discountAmount;
     QString m_discountType;
+    QString m_currentUserRole;
     bool m_isSeniorPwdApplied;
     bool m_userEditedCashReceived; // New member to track if user manually edited cash received
 
