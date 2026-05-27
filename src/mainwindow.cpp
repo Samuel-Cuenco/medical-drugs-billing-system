@@ -37,7 +37,6 @@ enum ItemDataRole {
 };
 
 
-
 // *constructor
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow), m_db(new DatabaseManager()) {
