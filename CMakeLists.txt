@@ -21,6 +21,7 @@ set(SOURCES #source files
 
     src/helpers.cpp
     src/databasemanager.cpp
+    src/paymentdialog.cpp
 )
 
 set(HEADERS #header files
@@ -28,6 +29,7 @@ set(HEADERS #header files
     include/helpers.h
     include/databasemanager.h
     include/models.h
+    include/paymentdialog.h
 )
 
 #set(UIS #ui files
