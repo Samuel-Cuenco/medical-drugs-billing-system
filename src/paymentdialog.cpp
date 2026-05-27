@@ -3,7 +3,7 @@
 #include "logindialog.h"
 #include <QMessageBox>
 #include <QDoubleValidator>
-#include <QPushButton> // Required for buttonBox->button()
+#include <QPushButton> // required for buttonbox->button()
 
 PaymentDialog::PaymentDialog(double originalTotal, const QString &userRole, QWidget *parent) :
     QDialog(parent),
@@ -14,8 +14,7 @@ PaymentDialog::PaymentDialog(double originalTotal, const QString &userRole, QWid
     m_discountType("None"),
     m_currentUserRole(userRole),
     m_isSeniorPwdApplied(false),
-    m_userEditedCashReceived(false) // Initialize the new flag
-{
+    m_userEditedCashReceived(false) { // initialize the new flag
     ui->setupUi(this);
     setWindowTitle("Payment");
 
@@ -29,17 +28,16 @@ PaymentDialog::PaymentDialog(double originalTotal, const QString &userRole, QWid
     validator->setNotation(QDoubleValidator::StandardNotation);
     ui->cashReceivedLineEdit->setValidator(validator);
 
-    updateTotals(); // Initial calculation
-    // Set initial focus to the cash received line edit
+    updateTotals(); // initial calculation
+    // set initial focus to the cash received line edit
     ui->cashReceivedLineEdit->setFocus();
     ui->cashReceivedLineEdit->selectAll();
-    // Shortcut to toggle the Senior/PWD discount
+    // shortcut to toggle the senior/pwd discount
     ui->seniorPwdCheckBox->setShortcut(QKeySequence("Ctrl+D"));
     connect(ui->cashReceivedLineEdit, &QLineEdit::returnPressed, this, &PaymentDialog::accept);
 }
 
-PaymentDialog::~PaymentDialog()
-{
+PaymentDialog::~PaymentDialog() {
     delete ui;
 }
 
@@ -63,12 +61,11 @@ QString PaymentDialog::getDiscountType() const
     return m_discountType;
 }
 
-void PaymentDialog::updateTotals()
-{
+void PaymentDialog::updateTotals() {
     double bulkDiscount = 0.0;
     double seniorDiscount = 0.0;
 
-    // Check for Bulk discount (5%)
+    // check for bulk discount (5%)
     if (m_originalTotal >= 10000.0) {
         bulkDiscount = m_originalTotal * 0.05;
     }
@@ -95,7 +92,7 @@ void PaymentDialog::updateTotals()
     ui->finalTotalLabel->setText(QString("Final Total: ₱%1").arg(m_finalTotal, 0, 'f', 2));
     ui->discountLabel->setText(QString("Discount: ₱%1 (%2)").arg(m_discountAmount, 0, 'f', 2).arg(m_discountType));
 
-    // Only update cashReceivedLineEdit if the user hasn't manually edited it
+    // only update cashreceivedlineedit if the user hasn't manually edited it
     if (!m_userEditedCashReceived) {
         ui->cashReceivedLineEdit->blockSignals(true);
         ui->cashReceivedLineEdit->setText(QString::number(m_finalTotal, 'f', 2));
@@ -106,20 +103,18 @@ void PaymentDialog::updateTotals()
     double change = received - m_finalTotal;
     ui->changeLabel->setText(QString("Change: ₱%1").arg(change, 0, 'f', 2));
 
-    // Enable/disable OK button based on sufficient payment
+    // enable/disable ok button based on sufficient payment
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(received >= m_finalTotal);
 }
 
-void PaymentDialog::on_cashReceivedLineEdit_textChanged(const QString &arg1)
-{
+void PaymentDialog::on_cashReceivedLineEdit_textChanged(const QString &arg1) {
     Q_UNUSED(arg1);
-    m_userEditedCashReceived = true; // Once the user types, they have control
+    m_userEditedCashReceived = true; // once the user types, they have control
     updateTotals();
 }
 
-void PaymentDialog::on_seniorPwdCheckBox_toggled(bool checked)
-{
-    // Requirement: Senior/PWD discount requires Manager (Admin) authorization
+void PaymentDialog::on_seniorPwdCheckBox_toggled(bool checked) {
+    // requirement: senior/pwd discount requires manager (admin) authorization
     if (checked && m_currentUserRole != "Admin") {
         LoginDialog auth(this);
         auth.setWindowTitle("Manager Authorization");
@@ -132,9 +127,9 @@ void PaymentDialog::on_seniorPwdCheckBox_toggled(bool checked)
                 ui->seniorPwdCheckBox->blockSignals(false);
                 return;
             }
-            m_currentUserRole = "Admin"; // Privilege escalation for this specific dialog instance
+            m_currentUserRole = "Admin"; // privilege escalation for this specific dialog instance
         } else {
-            // User cancelled the login prompt
+            // user cancelled the login prompt
             ui->seniorPwdCheckBox->blockSignals(true);
             ui->seniorPwdCheckBox->setChecked(false);
             ui->seniorPwdCheckBox->blockSignals(false);

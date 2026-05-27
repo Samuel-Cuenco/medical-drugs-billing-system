@@ -1,14 +1,13 @@
 #pragma once
 
 #include <QDialog>
-#include <QDialogButtonBox> // Include for QDialogButtonBox
+#include <QDialogButtonBox> // include for qdialogbuttonbox
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class PaymentDialog; }
 QT_END_NAMESPACE
 
-class PaymentDialog : public QDialog
-{
+class PaymentDialog : public QDialog {
     Q_OBJECT
 
 public:
@@ -32,7 +31,7 @@ private:
     QString m_discountType;
     QString m_currentUserRole;
     bool m_isSeniorPwdApplied;
-    bool m_userEditedCashReceived; // New member to track if user manually edited cash received
+    bool m_userEditedCashReceived; // new member to track if user manually edited cash received
 
     void updateTotals();
 };

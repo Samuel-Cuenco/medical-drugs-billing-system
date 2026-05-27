@@ -1,7 +1,7 @@
 #pragma once
 
 #include <QString>
-#include <QMetaType> // Required for Q_DECLARE_METATYPE
+#include <QMetaType> // required for q_declare_metatype
 
 struct Product {
     QString id;
@@ -10,7 +10,7 @@ struct Product {
     double price;
     int stock;
 
-    // Centrally managed display logic
+    // centrally managed display logic
     QString toSearchString() const {
         return QString("%1 | %2 | %3 | ₱%4 | stock:%5")
             .arg(id, name, description)

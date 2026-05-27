@@ -4,15 +4,13 @@
 #include <QSqlError>
 
 LoginDialog::LoginDialog(QWidget *parent) :
-    QDialog(parent), ui(new Ui::LoginDialog)
-{
+    QDialog(parent), ui(new Ui::LoginDialog) {
     ui->setupUi(this);
 }
 
 LoginDialog::~LoginDialog() { delete ui; }
 
-void LoginDialog::accept()
-{
+void LoginDialog::accept() {
     QString user = ui->usernameEdit->text();
     QString pass = ui->passwordEdit->text();
 

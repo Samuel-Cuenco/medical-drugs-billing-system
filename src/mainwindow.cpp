@@ -651,7 +651,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 return true;
             }
         }
-        // Focus is on Cart List
+        // focus is on cart list
         else if (obj == ui->cartList) {
             if (keyEvent->key() == Qt::Key_Left) {
                 ui->searchBox->setFocus();

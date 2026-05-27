@@ -107,7 +107,7 @@ void DatabaseManager::importCsv(const QString &csvPath) {
         return;
     }
 
-    m_db.transaction(); // Start transaction for speed and safety
+    m_db.transaction(); // start transaction for speed and safety
 
     QSqlQuery query(m_db);
     if (!query.exec("DELETE FROM products")) {
@@ -192,10 +192,10 @@ QList<Product> DatabaseManager::getLowStockItems(int threshold) {
 }
 
 bool DatabaseManager::isDatabaseEmpty() const {
-    QSqlQuery query(m_db); // Use m_db directly for const method
+    QSqlQuery query(m_db); // use m_db directly for const method
     if (!query.exec("SELECT COUNT(*) FROM products")) {
         qWarning() << "Failed to check if database is empty:" << query.lastError().text();
-        return true; // Err on the side of caution, assume empty or unreadable
+        return true; // err on the side of caution, assume empty or unreadable
     }
     query.next();
     return query.value(0).toInt() == 0;

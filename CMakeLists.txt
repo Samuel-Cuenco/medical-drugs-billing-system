@@ -5,12 +5,12 @@ project(Jupiter_Drugstore VERSION 0.1 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Crucial for Qt: Enables automatic compilation of UI, MOC, and Resource files
+# crucial for qt: enables automatic compilation of ui, moc, and resource files
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-# Adjust '6' to '5' if you are using Qt 5
+# adjust '6' to '5' if you are using qt 5
 find_package(Qt6 REQUIRED COMPONENTS Widgets Sql)
 
 #file directories

@@ -7,8 +7,7 @@ QT_BEGIN_NAMESPACE
 namespace Ui { class LoginDialog; }
 QT_END_NAMESPACE
 
-class LoginDialog : public QDialog
-{
+class LoginDialog : public QDialog {
     Q_OBJECT
 
 public:
