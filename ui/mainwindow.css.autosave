@@ -68,7 +68,6 @@
     background: rgba(244,168,39,0.08);
 }
 
-
 #importBtn {
     background-color: #ffbe80;
     border: none;
@@ -84,6 +83,7 @@
 #importBtn:hover {
     background-color: #e09416;
 }
+
 #importBtn:pressed {
     background-color: #c47d0a;
 }
