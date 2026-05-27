@@ -1,29 +1,37 @@
 #pragma once
 
 #include <QDialog>
-#include <QLabel>
-#include <QDoubleSpinBox>
-#include <QCheckBox>
-#include <QPushButton>
+#include <QDialogButtonBox> // Include for QDialogButtonBox
 
-class PaymentDialog : public QDialog {
+QT_BEGIN_NAMESPACE
+namespace Ui { class PaymentDialog; }
+QT_END_NAMESPACE
+
+class PaymentDialog : public QDialog
+{
     Q_OBJECT
-public:
-    explicit PaymentDialog(double total, QWidget *parent = nullptr);
 
-    double getReceivedAmount() const { return m_amountSpin->value(); }
-    bool isDiscountApplied() const { return m_discountCheck->isChecked(); }
-    double getFinalTotal() const { return m_finalTotal; }
-    double getDiscountAmount() const { return m_discountAmount; }
+public:
+    explicit PaymentDialog(double originalTotal, QWidget *parent = nullptr);
+    ~PaymentDialog();
+
+    double getReceivedAmount() const;
+    double getFinalTotal() const;
+    double getDiscountAmount() const;
+    QString getDiscountType() const;
 
 private slots:
-    void calculateTotals();
+    void on_cashReceivedLineEdit_textChanged(const QString &arg1);
+    void on_seniorPwdCheckBox_toggled(bool checked);
 
 private:
+    Ui::PaymentDialog *ui;
     double m_originalTotal;
     double m_finalTotal;
     double m_discountAmount;
-    QLabel *m_infoLabel;
-    QDoubleSpinBox *m_amountSpin;
-    QCheckBox *m_discountCheck;
+    QString m_discountType;
+    bool m_isSeniorPwdApplied;
+    bool m_userEditedCashReceived; // New member to track if user manually edited cash received
+
+    void updateTotals();
 };

@@ -19,6 +19,7 @@ include_directories(include)
 set(SOURCES #source files
     src/main.cpp
 
+    src/mainwindow.cpp
     src/helpers.cpp
     src/databasemanager.cpp
     src/paymentdialog.cpp
@@ -32,9 +33,10 @@ set(HEADERS #header files
     include/paymentdialog.h
 )
 
-#set(UIS #ui files
-#    ui/mainwindow.ui
-#)
+set(UIS #ui files
+    src/mainwindow.ui
+    src/paymentdialog.ui
+)
 
 set(RESOURCES #resource files
     assets/resources.qrc
@@ -43,11 +45,8 @@ set(RESOURCES #resource files
 add_executable(${PROJECT_NAME}
     ${SOURCES}
     ${HEADERS}
-    #${UIS}
+    ${UIS}
     ${RESOURCES}
-
-    "src/mainwindow.cpp"
-    src/mainwindow.ui
 )
 
 # Link Qt libraries to your executable

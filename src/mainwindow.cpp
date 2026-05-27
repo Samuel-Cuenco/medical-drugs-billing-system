@@ -252,8 +252,10 @@ void MainWindow::showHistoryPage() {
         if (discountAmount > 0) {
             QTreeWidgetItem* discountChild = new QTreeWidgetItem(orderItem);
             discountChild->setText(0, QString(" • Discount (%1)").arg(discountType));
-            discountChild->setText(1, QString("-₱%1").arg(discountAmount, 0, 'f', 2));
-            discountChild->setForeground(0, QBrush(QColor("#d9534f"))); // Red for discount
+            discountChild->setText(1, QString("- ₱%1").arg(discountAmount, 0, 'f', 2));
+            QBrush redBrush(QColor("#d9534f"));
+            discountChild->setForeground(0, redBrush);
+            discountChild->setForeground(1, redBrush);
         }
         
         // Emphasize the parent row
@@ -479,7 +481,7 @@ void MainWindow::checkout() {
     double received = diag.getReceivedAmount();
     double finalTotal = diag.getFinalTotal();
     double discountAmount = diag.getDiscountAmount();
-    QString discountType = diag.isDiscountApplied() ? "Senior/PWD (20%)" : "None";
+    QString discountType = diag.getDiscountType();
 
     if (received < finalTotal) {
         QMessageBox::warning(this, "Insufficient Payment",
