@@ -112,8 +112,8 @@ void PaymentDialog::updateTotals()
 
 void PaymentDialog::on_cashReceivedLineEdit_textChanged(const QString &arg1)
 {
-    // If the field is cleared, we allow the system to auto-calculate again
-    m_userEditedCashReceived = !arg1.isEmpty(); 
+    Q_UNUSED(arg1);
+    m_userEditedCashReceived = true; // Once the user types, they have control
     updateTotals();
 }
 
