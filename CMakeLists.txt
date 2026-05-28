@@ -10,6 +10,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
+# Tell CMake to look for .ui files in the 'ui' directory
+set(CMAKE_AUTOUIC_SEARCH_PATHS "${CMAKE_CURRENT_SOURCE_DIR}/ui")
+
 # adjust '6' to '5' if you are using qt 5
 find_package(Qt6 REQUIRED COMPONENTS Widgets Sql)
 
@@ -36,9 +39,9 @@ set(HEADERS #header files
 )
 
 set(UIS #ui files
-    src/mainwindow.ui
-    src/paymentdialog.ui
-    src/logindialog.ui
+    ui/mainwindow.ui
+    ui/paymentdialog.ui
+    ui/logindialog.ui
 )
 
 set(RESOURCES #resource files
